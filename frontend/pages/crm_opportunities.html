@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Opportunities - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=3"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .kanban-column { min-height: 400px; }
+        .opp-card { cursor: pointer; transition: all 0.2s; }
+        .opp-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>OrgSuite</span>
+            </a>
+            <nav class="flex items-center gap-6" id="nav-menu"></nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <!-- Organization Selector -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Organization</label>
+                <select id="org-selector" class="w-full md:w-80 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                    <option value="">Select organization...</option>
+                </select>
+            </div>
+
+            <!-- Page Header -->
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Sales Pipeline</h1>
+                    <p class="text-gray-500 mt-1">Track and manage opportunities through your sales funnel</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="toggle-view" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                        <span id="view-icon">Table View</span>
+                    </button>
+                    <button id="add-opp-btn" data-require-role="member"
+                        class="hidden inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        New Opportunity
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600">
+                                <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-open">0</p>
+                            <p class="text-sm text-gray-500">Open Opps</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-won">0</p>
+                            <p class="text-sm text-gray-500">Won</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600">
+                                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-pipeline">$0</p>
+                            <p class="text-sm text-gray-500">Pipeline Value</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-orange-600">
+                                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-closing">0</p>
+                            <p class="text-sm text-gray-500">Closing This Month</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanban View -->
+            <div id="kanban-view" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <!-- Prospecting -->
+                <div class="kanban-column bg-gray-100 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-gray-700">Prospecting</h3>
+                        <span class="bg-gray-200 text-gray-600 text-xs font-medium px-2 py-1 rounded-full" id="count-prospecting">0</span>
+                    </div>
+                    <div id="col-prospecting" class="space-y-3"></div>
+                </div>
+
+                <!-- Qualification -->
+                <div class="kanban-column bg-blue-50 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-blue-700">Qualification</h3>
+                        <span class="bg-blue-100 text-blue-600 text-xs font-medium px-2 py-1 rounded-full" id="count-qualification">0</span>
+                    </div>
+                    <div id="col-qualification" class="space-y-3"></div>
+                </div>
+
+                <!-- Proposal Made -->
+                <div class="kanban-column bg-yellow-50 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-yellow-700">Proposal Made</h3>
+                        <span class="bg-yellow-100 text-yellow-600 text-xs font-medium px-2 py-1 rounded-full" id="count-proposal_made">0</span>
+                    </div>
+                    <div id="col-proposal_made" class="space-y-3"></div>
+                </div>
+
+                <!-- Negotiation -->
+                <div class="kanban-column bg-purple-50 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-purple-700">Negotiation</h3>
+                        <span class="bg-purple-100 text-purple-600 text-xs font-medium px-2 py-1 rounded-full" id="count-negotiation">0</span>
+                    </div>
+                    <div id="col-negotiation" class="space-y-3"></div>
+                </div>
+
+                <!-- Won -->
+                <div class="kanban-column bg-green-50 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-green-700">Won</h3>
+                        <span class="bg-green-100 text-green-600 text-xs font-medium px-2 py-1 rounded-full" id="count-won">0</span>
+                    </div>
+                    <div id="col-won" class="space-y-3"></div>
+                </div>
+
+                <!-- Lost -->
+                <div class="kanban-column bg-red-50 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-red-700">Lost</h3>
+                        <span class="bg-red-100 text-red-600 text-xs font-medium px-2 py-1 rounded-full" id="count-lost">0</span>
+                    </div>
+                    <div id="col-lost" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Table View (hidden by default) -->
+            <div id="table-view" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-900">All Opportunities</h2>
+                        <div class="flex items-center gap-2">
+                            <select id="stage-filter" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm">
+                                <option value="">All Stages</option>
+                                <option value="prospecting">Prospecting</option>
+                                <option value="qualification">Qualification</option>
+                                <option value="proposal_made">Proposal Made</option>
+                                <option value="negotiation">Negotiation</option>
+                                <option value="won">Won</option>
+                                <option value="lost">Lost</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opportunity</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Close</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" data-require-role="admin">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opportunities-list" class="divide-y divide-gray-100">
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                    Loading opportunities...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Opportunity Modal -->
+    <div id="opportunity-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-6 border-b border-gray-100">
+                <h3 id="modal-title" class="text-xl font-semibold text-gray-900">New Opportunity</h3>
+                <button onclick="hideOpportunityModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="opportunity-form" class="p-6 space-y-5">
+                <input type="hidden" id="opp-id" value="">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                    <input type="text" id="opp-title" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="e.g., Annual Sponsorship Package">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="opp-description" rows="2"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Brief description of the opportunity"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Related Contact</label>
+                        <select id="opp-contact"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="">Select contact...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Related Project</label>
+                        <select id="opp-project"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="">Select project...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                        <input type="number" id="opp-amount" step="0.01" min="0"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Stage</label>
+                        <select id="opp-stage"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="prospecting">Prospecting</option>
+                            <option value="qualification">Qualification</option>
+                            <option value="proposal_made">Proposal Made</option>
+                            <option value="negotiation">Negotiation</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Expected Close Date</label>
+                        <input type="date" id="opp-close-date"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Source</label>
+                        <select id="opp-source"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="referral">Referral</option>
+                            <option value="web">Web</option>
+                            <option value="cold_call">Cold Call</option>
+                            <option value="event">Event</option>
+                            <option value="partner">Partner</option>
+                            <option value="existing_client">Existing Client</option>
+                            <option value="marketing_campaign">Marketing Campaign</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideOpportunityModal()"
+                        class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Save Opportunity
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-red-600">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Delete Opportunity</h3>
+                    <p class="text-sm text-gray-500">This action cannot be undone.</p>
+                </div>
+            </div>
+            <p class="text-gray-600 mb-6">Are you sure you want to delete <strong id="delete-opp-name"></strong>?</p>
+            <div class="flex gap-3 justify-end">
+                <button onclick="hideDeleteModal()"
+                    class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmDelete()"
+                    class="px-5 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentOrgId = null;
+        let isAdmin = false;
+        let contacts = [];
+        let projects = [];
+        let opportunities = [];
+        let oppToDelete = null;
+        let isKanbanView = true;
+
+        const STAGES = ['prospecting', 'qualification', 'proposal_made', 'negotiation', 'won', 'lost'];
+        const STAGE_COLORS = {
+            prospecting: 'border-gray-300 bg-white',
+            qualification: 'border-blue-300 bg-blue-50',
+            proposal_made: 'border-yellow-300 bg-yellow-50',
+            negotiation: 'border-purple-300 bg-purple-50',
+            won: 'border-green-300 bg-green-50',
+            lost: 'border-red-300 bg-red-50'
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+            App.updateNav();
+
+            await loadOrganizations();
+
+            document.getElementById('org-selector').addEventListener('change', onOrgChange);
+            document.getElementById('toggle-view').addEventListener('click', toggleView);
+            document.getElementById('stage-filter').addEventListener('change', loadOpportunities);
+            document.getElementById('opportunity-form').addEventListener('submit', handleOppSubmit);
+            document.getElementById('add-opp-btn').addEventListener('click', showAddOppModal);
+        });
+
+        async function loadOrganizations() {
+            const selector = document.getElementById('org-selector');
+            try {
+                const response = await API.organizations.list();
+                const orgs = response.items || response || [];
+
+                if (orgs.length === 0) {
+                    selector.innerHTML = '<option value="">No organizations found</option>';
+                } else {
+                    selector.innerHTML = '<option value="">Select organization...</option>' +
+                        orgs.map(org => `<option value="${org.id}">${UI.escapeHtml(org.name)}</option>`).join('');
+
+                    const urlOrgId = UI.getUrlParam('org');
+                    if (urlOrgId) {
+                        selector.value = urlOrgId;
+                        await onOrgChange();
+                    } else if (orgs.length === 1) {
+                        selector.value = orgs[0].id;
+                        await onOrgChange();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+                selector.innerHTML = '<option value="">Error loading organizations</option>';
+            }
+        }
+
+        async function onOrgChange() {
+            currentOrgId = document.getElementById('org-selector').value;
+
+            if (!currentOrgId) {
+                document.getElementById('add-opp-btn').classList.add('hidden');
+                clearKanban();
+                return;
+            }
+
+            API.org.setCurrentId(currentOrgId);
+            isAdmin = await API.roles.hasMinRole('admin', currentOrgId);
+            const canCreate = await API.roles.hasMinRole('member', currentOrgId);
+
+            if (canCreate) {
+                document.getElementById('add-opp-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('add-opp-btn').classList.add('hidden');
+            }
+
+            await Promise.all([loadContacts(), loadProjects(), loadOpportunities()]);
+        }
+
+        async function loadContacts() {
+            try {
+                const response = await API.membership.contacts.list(currentOrgId, { perPage: 100 });
+                contacts = response.items || [];
+                const select = document.getElementById('opp-contact');
+                select.innerHTML = '<option value="">Select contact...</option>' +
+                    contacts.map(c => `<option value="${c.id}">${UI.escapeHtml(c.name)}</option>`).join('');
+            } catch (err) {
+                console.error('Failed to load contacts:', err);
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const response = await API.events.projects.list(currentOrgId, { perPage: 100 });
+                projects = response.items || [];
+                const select = document.getElementById('opp-project');
+                select.innerHTML = '<option value="">Select project...</option>' +
+                    projects.map(p => `<option value="${p.id}">${UI.escapeHtml(p.name)}</option>`).join('');
+            } catch (err) {
+                console.error('Failed to load projects:', err);
+            }
+        }
+
+        async function loadOpportunities() {
+            try {
+                const stageFilter = document.getElementById('stage-filter').value;
+                const params = { perPage: 200 };
+                if (stageFilter) params.stage = stageFilter;
+
+                const response = await API.crm.opportunities.list(currentOrgId, params);
+                opportunities = response.items || [];
+
+                updateStats();
+                if (isKanbanView) {
+                    renderKanban();
+                } else {
+                    renderTable();
+                }
+            } catch (err) {
+                console.error('Failed to load opportunities:', err);
+                UI.showError('Failed to load opportunities');
+            }
+        }
+
+        function updateStats() {
+            const open = opportunities.filter(o => !['won', 'lost'].includes(o.stage)).length;
+            const won = opportunities.filter(o => o.stage === 'won').length;
+            const pipelineValue = opportunities
+                .filter(o => !['won', 'lost'].includes(o.stage))
+                .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+
+            const now = new Date();
+            const thisMonth = opportunities.filter(o => {
+                if (!o.expected_close_date) return false;
+                const d = new Date(o.expected_close_date);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && !['won', 'lost'].includes(o.stage);
+            }).length;
+
+            document.getElementById('stat-open').textContent = open;
+            document.getElementById('stat-won').textContent = won;
+            document.getElementById('stat-pipeline').textContent = '$' + pipelineValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            document.getElementById('stat-closing').textContent = thisMonth;
+        }
+
+        function clearKanban() {
+            STAGES.forEach(stage => {
+                document.getElementById(`col-${stage}`).innerHTML = '';
+                document.getElementById(`count-${stage}`).textContent = '0';
+            });
+        }
+
+        function renderKanban() {
+            STAGES.forEach(stage => {
+                const stageOpps = opportunities.filter(o => o.stage === stage);
+                const container = document.getElementById(`col-${stage}`);
+                document.getElementById(`count-${stage}`).textContent = stageOpps.length;
+
+                if (stageOpps.length === 0) {
+                    container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">No opportunities</p>';
+                } else {
+                    container.innerHTML = stageOpps.map(opp => renderOppCard(opp)).join('');
+                }
+            });
+        }
+
+        function renderOppCard(opp) {
+            const colorClass = STAGE_COLORS[opp.stage] || 'bg-white';
+            const amount = opp.amount ? '$' + parseFloat(opp.amount).toLocaleString() : '';
+            const contactName = opp.related_contact_name || '';
+
+            return `
+                <div class="opp-card ${colorClass} border rounded-lg p-3 shadow-sm" onclick="viewOpportunity('${opp.id}')">
+                    <h4 class="font-medium text-gray-900 text-sm mb-1 truncate">${UI.escapeHtml(opp.title)}</h4>
+                    ${contactName ? `<p class="text-xs text-gray-500 mb-1 truncate">${UI.escapeHtml(contactName)}</p>` : ''}
+                    <div class="flex items-center justify-between">
+                        ${amount ? `<span class="text-sm font-semibold text-green-600">${amount}</span>` : '<span></span>'}
+                        <span class="text-xs text-gray-400">${opp.probability}%</span>
+                    </div>
+                    ${opp.expected_close_date ? `<p class="text-xs text-gray-400 mt-1">${UI.formatShortDate(opp.expected_close_date)}</p>` : ''}
+                </div>
+            `;
+        }
+
+        function renderTable() {
+            const container = document.getElementById('opportunities-list');
+            if (opportunities.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            No opportunities found. Create your first opportunity to get started.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            container.innerHTML = opportunities.map(opp => renderOppRow(opp)).join('');
+        }
+
+        function renderOppRow(opp) {
+            const stageColors = {
+                prospecting: 'bg-gray-100 text-gray-700',
+                qualification: 'bg-blue-100 text-blue-700',
+                proposal_made: 'bg-yellow-100 text-yellow-700',
+                negotiation: 'bg-purple-100 text-purple-700',
+                won: 'bg-green-100 text-green-700',
+                lost: 'bg-red-100 text-red-700'
+            };
+
+            const stageClass = stageColors[opp.stage] || 'bg-gray-100 text-gray-700';
+            const stageText = (opp.stage || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const amount = opp.amount ? '$' + parseFloat(opp.amount).toLocaleString() : '-';
+
+            const actionsHtml = isAdmin ? `
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                        <button onclick="event.stopPropagation(); editOpportunity('${opp.id}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            Edit
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteOpportunity('${opp.id}', '${UI.escapeHtml(opp.title).replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                            Delete
+                        </button>
+                    </div>
+                </td>
+            ` : `<td class="px-6 py-4"></td>`;
+
+            return `
+                <tr class="hover:bg-gray-50 cursor-pointer" onclick="viewOpportunity('${opp.id}')">
+                    <td class="px-6 py-4">
+                        <div>
+                            <p class="font-medium text-gray-900">${UI.escapeHtml(opp.title)}</p>
+                            ${opp.description ? `<p class="text-sm text-gray-500 truncate max-w-xs">${UI.escapeHtml(opp.description)}</p>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${opp.related_contact_name ? UI.escapeHtml(opp.related_contact_name) : '-'}
+                    </td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                        ${amount}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stageClass}">
+                            ${stageText}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${opp.expected_close_date ? UI.formatShortDate(opp.expected_close_date) : '-'}
+                    </td>
+                    ${actionsHtml}
+                </tr>
+            `;
+        }
+
+        function toggleView() {
+            isKanbanView = !isKanbanView;
+            document.getElementById('view-icon').textContent = isKanbanView ? 'Table View' : 'Kanban View';
+            document.getElementById('kanban-view').classList.toggle('hidden', !isKanbanView);
+            document.getElementById('table-view').classList.toggle('hidden', isKanbanView);
+
+            if (isKanbanView) {
+                renderKanban();
+            } else {
+                renderTable();
+            }
+        }
+
+        function showAddOppModal() {
+            document.getElementById('modal-title').textContent = 'New Opportunity';
+            document.getElementById('opportunity-form').reset();
+            document.getElementById('opp-id').value = '';
+            document.getElementById('opportunity-modal').classList.remove('hidden');
+        }
+
+        function viewOpportunity(oppId) {
+            window.location.href = `/pages/crm_opportunity_detail.html?id=${oppId}&org=${currentOrgId}`;
+        }
+
+        async function editOpportunity(oppId) {
+            try {
+                const opp = await API.crm.opportunities.get(currentOrgId, oppId);
+                document.getElementById('modal-title').textContent = 'Edit Opportunity';
+                document.getElementById('opp-id').value = opp.id;
+                document.getElementById('opp-title').value = opp.title;
+                document.getElementById('opp-description').value = opp.description || '';
+                document.getElementById('opp-contact').value = opp.related_contact_id || '';
+                document.getElementById('opp-project').value = opp.related_project_id || '';
+                document.getElementById('opp-amount').value = opp.amount || '';
+                document.getElementById('opp-stage').value = opp.stage || 'prospecting';
+                document.getElementById('opp-close-date').value = opp.expected_close_date || '';
+                document.getElementById('opp-source').value = opp.source || 'other';
+                document.getElementById('opportunity-modal').classList.remove('hidden');
+            } catch (err) {
+                UI.showError('Failed to load opportunity');
+            }
+        }
+
+        function hideOpportunityModal() {
+            document.getElementById('opportunity-modal').classList.add('hidden');
+        }
+
+        async function handleOppSubmit(e) {
+            e.preventDefault();
+
+            const oppId = document.getElementById('opp-id').value;
+            const payload = {
+                title: document.getElementById('opp-title').value,
+                description: document.getElementById('opp-description').value || null,
+                related_contact_id: document.getElementById('opp-contact').value || null,
+                related_project_id: document.getElementById('opp-project').value || null,
+                amount: document.getElementById('opp-amount').value ? parseFloat(document.getElementById('opp-amount').value) : null,
+                stage: document.getElementById('opp-stage').value,
+                expected_close_date: document.getElementById('opp-close-date').value || null,
+                source: document.getElementById('opp-source').value
+            };
+
+            try {
+                if (oppId) {
+                    await API.crm.opportunities.update(currentOrgId, oppId, payload);
+                    UI.showSuccess('Opportunity updated!');
+                } else {
+                    await API.crm.opportunities.create(currentOrgId, payload);
+                    UI.showSuccess('Opportunity created!');
+                }
+                hideOpportunityModal();
+                await loadOpportunities();
+            } catch (err) {
+                UI.showError(err.message || 'Failed to save opportunity');
+            }
+        }
+
+        function deleteOpportunity(oppId, oppTitle) {
+            oppToDelete = { id: oppId, title: oppTitle };
+            document.getElementById('delete-opp-name').textContent = oppTitle;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            oppToDelete = null;
+        }
+
+        async function confirmDelete() {
+            if (!oppToDelete) return;
+
+            try {
+                await API.crm.opportunities.delete(currentOrgId, oppToDelete.id);
+                UI.showSuccess('Opportunity deleted!');
+                hideDeleteModal();
+                await loadOpportunities();
+            } catch (err) {
+                UI.showError(err.message || 'Failed to delete opportunity');
+            }
+        }
+    </script>
+</body>
+</html>

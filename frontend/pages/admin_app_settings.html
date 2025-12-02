@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Settings - OrgSuite Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span id="app-name-display">OrgSuite</span>
+            </a>
+            <nav class="flex items-center gap-6" id="nav-menu"></nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-10">
+        <div class="max-w-4xl mx-auto px-6">
+            <!-- Page Header -->
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                        <a href="/pages/dashboard.html" class="hover:text-blue-600">Dashboard</a>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span class="text-gray-900 font-medium">Global App Settings</span>
+                    </nav>
+                    <h1 class="text-3xl font-bold text-gray-900">Global App Settings</h1>
+                    <p class="text-gray-500 mt-2">Configure application-wide settings (superadmin only)</p>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-medium">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                    </svg>
+                    Superadmin Area
+                </div>
+            </div>
+
+            <!-- Access Denied Message (shown for non-superadmins) -->
+            <div id="access-denied" class="hidden">
+                <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+                    <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" class="text-red-400 mx-auto mb-4">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    <h2 class="text-xl font-bold text-red-800 mb-2">Access Denied</h2>
+                    <p class="text-red-700">You do not have permission to access global app settings.</p>
+                    <p class="text-red-600 text-sm mt-2">This area is restricted to superadmin users only.</p>
+                    <a href="/pages/dashboard.html" class="inline-block mt-6 px-5 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700">
+                        Return to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Settings Content (shown for superadmins) -->
+            <div id="settings-content" class="space-y-6">
+                <!-- Branding Settings -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-blue-600">
+                                <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Branding</h2>
+                            <p class="text-sm text-gray-500">Customize the application appearance</p>
+                        </div>
+                    </div>
+
+                    <form id="branding-form" class="space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Application Name</label>
+                                <input type="text" id="setting-app-name"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       value="OrgSuite" placeholder="OrgSuite">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Support Email</label>
+                                <input type="email" id="setting-support-email"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       value="support@orgsuite.app" placeholder="support@orgsuite.app">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="setting-primary-color"
+                                           class="w-12 h-12 border border-gray-300 rounded-lg cursor-pointer"
+                                           value="#3B82F6">
+                                    <input type="text" id="setting-primary-color-text"
+                                           class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           value="#3B82F6" placeholder="#3B82F6">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Logo URL (optional)</label>
+                                <input type="url" id="setting-logo-url"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="https://example.com/logo.png">
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                            <button type="button" onclick="loadSettings()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Reset</button>
+                            <button type="submit" id="save-branding-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                                Save Branding
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Feature Flags -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-purple-600">
+                                <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Feature Flags</h2>
+                            <p class="text-sm text-gray-500">Enable or disable application modules</p>
+                        </div>
+                    </div>
+
+                    <form id="features-form" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" id="feature-governance" checked
+                                       class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium text-gray-900">Governance</span>
+                                    <p class="text-xs text-gray-500">Meetings, motions, voting</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" id="feature-membership" checked
+                                       class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium text-gray-900">Membership</span>
+                                    <p class="text-xs text-gray-500">Members and contacts</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" id="feature-finance" checked
+                                       class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium text-gray-900">Finance</span>
+                                    <p class="text-xs text-gray-500">Accounts, donations, journal</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" id="feature-documents" checked
+                                       class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium text-gray-900">Documents</span>
+                                    <p class="text-xs text-gray-500">File management</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" id="feature-events"
+                                       class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium text-gray-900">Events</span>
+                                    <p class="text-xs text-gray-500">Event management (coming soon)</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" id="feature-projects"
+                                       class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium text-gray-900">Projects</span>
+                                    <p class="text-xs text-gray-500">Project tracking (coming soon)</p>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                            <button type="button" onclick="loadSettings()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Reset</button>
+                            <button type="submit" id="save-features-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                                Save Features
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        let isSuperadmin = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+            App.updateNav();
+
+            // Check superadmin status
+            await checkSuperadminAccess();
+
+            if (isSuperadmin) {
+                await loadSettings();
+
+                // Setup form submissions
+                document.getElementById('branding-form').addEventListener('submit', saveBranding);
+                document.getElementById('features-form').addEventListener('submit', saveFeatures);
+
+                // Sync color inputs
+                document.getElementById('setting-primary-color').addEventListener('input', (e) => {
+                    document.getElementById('setting-primary-color-text').value = e.target.value;
+                });
+                document.getElementById('setting-primary-color-text').addEventListener('input', (e) => {
+                    if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                        document.getElementById('setting-primary-color').value = e.target.value;
+                    }
+                });
+            }
+        });
+
+        async function checkSuperadminAccess() {
+            try {
+                // Try to access app settings - will fail if not superadmin
+                const response = await fetch('/api/v1/admin/app-settings', {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                if (response.ok) {
+                    isSuperadmin = true;
+                    document.getElementById('settings-content').classList.remove('hidden');
+                    document.getElementById('access-denied').classList.add('hidden');
+                } else if (response.status === 403) {
+                    isSuperadmin = false;
+                    document.getElementById('settings-content').classList.add('hidden');
+                    document.getElementById('access-denied').classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error('Failed to check access:', err);
+                document.getElementById('settings-content').classList.add('hidden');
+                document.getElementById('access-denied').classList.remove('hidden');
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                // Load branding
+                const brandingRes = await fetch('/api/v1/admin/app-settings/branding', {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+                if (brandingRes.ok) {
+                    const branding = await brandingRes.json();
+                    const value = branding.value || {};
+                    document.getElementById('setting-app-name').value = value.app_name || 'OrgSuite';
+                    document.getElementById('setting-support-email').value = value.support_email || 'support@orgsuite.app';
+                    document.getElementById('setting-primary-color').value = value.primary_color || '#3B82F6';
+                    document.getElementById('setting-primary-color-text').value = value.primary_color || '#3B82F6';
+                    document.getElementById('setting-logo-url').value = value.logo_url || '';
+
+                    // Update header display
+                    document.getElementById('app-name-display').textContent = value.app_name || 'OrgSuite';
+                }
+
+                // Load features
+                const featuresRes = await fetch('/api/v1/admin/app-settings/features', {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+                if (featuresRes.ok) {
+                    const features = await featuresRes.json();
+                    const value = features.value || {};
+                    document.getElementById('feature-governance').checked = value.enable_governance !== false;
+                    document.getElementById('feature-membership').checked = value.enable_membership !== false;
+                    document.getElementById('feature-finance').checked = value.enable_finance !== false;
+                    document.getElementById('feature-documents').checked = value.enable_documents !== false;
+                    document.getElementById('feature-events').checked = value.enable_events === true;
+                    document.getElementById('feature-projects').checked = value.enable_projects === true;
+                }
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+            }
+        }
+
+        async function saveBranding(event) {
+            event.preventDefault();
+
+            const btn = document.getElementById('save-branding-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const branding = {
+                    app_name: document.getElementById('setting-app-name').value,
+                    support_email: document.getElementById('setting-support-email').value,
+                    primary_color: document.getElementById('setting-primary-color').value,
+                    logo_url: document.getElementById('setting-logo-url').value || null
+                };
+
+                const response = await fetch('/api/v1/admin/app-settings/branding', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify({ value: branding })
+                });
+
+                if (!response.ok) throw new Error('Failed to save branding');
+
+                // Update header display
+                document.getElementById('app-name-display').textContent = branding.app_name;
+
+                App.showNotification('Branding saved successfully!', 'success');
+            } catch (err) {
+                console.error('Failed to save branding:', err);
+                App.showNotification('Failed to save branding', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Branding';
+            }
+        }
+
+        async function saveFeatures(event) {
+            event.preventDefault();
+
+            const btn = document.getElementById('save-features-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const features = {
+                    enable_governance: document.getElementById('feature-governance').checked,
+                    enable_membership: document.getElementById('feature-membership').checked,
+                    enable_finance: document.getElementById('feature-finance').checked,
+                    enable_documents: document.getElementById('feature-documents').checked,
+                    enable_events: document.getElementById('feature-events').checked,
+                    enable_projects: document.getElementById('feature-projects').checked
+                };
+
+                const response = await fetch('/api/v1/admin/app-settings/features', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify({ value: features })
+                });
+
+                if (!response.ok) throw new Error('Failed to save features');
+
+                App.showNotification('Feature flags saved successfully!', 'success');
+            } catch (err) {
+                console.error('Failed to save features:', err);
+                App.showNotification('Failed to save features', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Features';
+            }
+        }
+    </script>
+</body>
+</html>

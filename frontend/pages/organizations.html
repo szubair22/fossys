@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizations - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col" hx-ext="json-enc">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>OrgSuite</span>
+            </a>
+            <nav class="flex items-center gap-6" id="nav-menu"></nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <!-- Page Header -->
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Organizations</h1>
+                    <p class="text-gray-500 mt-2">Manage your organizations and committees</p>
+                </div>
+                <button onclick="showNewOrgModal()" class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Create Organization
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                <div class="flex gap-4 items-center">
+                    <div class="flex-1">
+                        <input type="text" id="org-search" placeholder="Search organizations..."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               oninput="debounceSearch()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organizations List -->
+            <div id="organizations-list" class="grid md:grid-cols-3 gap-5">
+                <div class="col-span-3 text-center py-16">
+                    <div class="inline-flex items-center gap-3 text-gray-400">
+                        <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                        </svg>
+                        <span class="text-lg">Loading organizations...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="flex justify-between items-center mt-6 hidden">
+                <div class="text-sm text-gray-500">
+                    Showing <span id="showing-start">0</span>-<span id="showing-end">0</span> of <span id="total-items">0</span> organizations
+                </div>
+                <div class="flex gap-2">
+                    <button id="prev-page" onclick="changePage(-1)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Previous</button>
+                    <button id="next-page" onclick="changePage(1)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- New Organization Modal -->
+    <div id="new-org-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Create New Organization</h2>
+                <button onclick="hideNewOrgModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="new-org-form" class="space-y-5" onsubmit="submitOrgForm(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Organization Name *</label>
+                    <input type="text" name="name" id="org-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="e.g., City Council" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea name="description" id="org-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="3" placeholder="Describe your organization..."></textarea>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideNewOrgModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" id="submit-org-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Create Organization
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Organization Modal -->
+    <div id="edit-org-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Edit Organization</h2>
+                <button onclick="hideEditOrgModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="edit-org-form" class="space-y-5" onsubmit="submitEditOrgForm(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Organization Name *</label>
+                    <input type="text" id="edit-org-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="edit-org-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="3"></textarea>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideEditOrgModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" id="submit-edit-org-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentPage = 1;
+        let currentSearch = '';
+        let searchTimeout = null;
+        const perPage = 30;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+            App.updateNav();
+
+            // Load organizations
+            await loadOrganizations();
+
+            // Check if should open new org modal
+            if (App.getUrlParam('new') === '1') {
+                showNewOrgModal();
+            }
+        });
+
+        async function loadOrganizations() {
+            const container = document.getElementById('organizations-list');
+
+            // Show loading
+            container.innerHTML = `
+                <div class="col-span-3 text-center py-16">
+                    <div class="inline-flex items-center gap-3 text-gray-400">
+                        <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                        </svg>
+                        <span class="text-lg">Loading organizations...</span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                // Build query params
+                let url = `/api/v1/organizations?page=${currentPage}&perPage=${perPage}`;
+                if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch organizations');
+
+                const data = await response.json();
+                renderOrganizations(data);
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+                container.innerHTML = `
+                    <div class="col-span-3 text-center py-16 text-red-500">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto mb-4 text-red-400">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <p>Failed to load organizations. Please try again.</p>
+                        <button onclick="loadOrganizations()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderOrganizations(data) {
+            const container = document.getElementById('organizations-list');
+            const organizations = data.items || [];
+
+            if (organizations.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                            <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" class="text-gray-400">
+                                <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">No organizations yet</h3>
+                        <p class="text-gray-500 mb-6">${currentSearch ? 'No organizations match your search' : 'Create your first organization to get started'}</p>
+                        ${!currentSearch ? `
+                            <button onclick="showNewOrgModal()" class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                </svg>
+                                Create Organization
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                document.getElementById('pagination').classList.add('hidden');
+                return;
+            }
+
+            container.innerHTML = organizations.map((org, i) => renderOrgCard(org, i)).join('');
+
+            // Update pagination
+            updatePagination(data);
+        }
+
+        function renderOrgCard(org, index) {
+            const colors = ['bg-blue-600', 'bg-purple-600', 'bg-green-600', 'bg-orange-500', 'bg-pink-600', 'bg-teal-600'];
+            const colorClass = colors[index % colors.length];
+            const description = org.description
+                ? `<p class="text-sm text-gray-500 line-clamp-2 leading-relaxed">${org.description.slice(0, 100)}${org.description.length > 100 ? '...' : ''}</p>`
+                : '<p class="text-sm text-gray-400 italic">No description</p>';
+
+            const roleLabel = org.user_role
+                ? `<span class="text-xs px-2 py-0.5 rounded-full ${org.user_role === 'owner' ? 'bg-purple-100 text-purple-700' : org.user_role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}">${org.user_role}</span>`
+                : '';
+
+            const isOwnerOrAdmin = org.user_role === 'owner' || org.user_role === 'admin';
+
+            return `
+                <div class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-gray-200 transition-all duration-200">
+                    <div class="flex items-start gap-4">
+                        <a href="/pages/organization.html?id=${org.id}" class="flex-shrink-0">
+                            <div class="w-14 h-14 ${colorClass} text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-sm group-hover:scale-105 transition-transform">
+                                ${org.name.charAt(0).toUpperCase()}
+                            </div>
+                        </a>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <a href="/pages/organization.html?id=${org.id}" class="font-semibold text-gray-900 text-lg group-hover:text-blue-600 transition-colors truncate">
+                                    ${org.name}
+                                </a>
+                                ${roleLabel}
+                            </div>
+                            ${description}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+                        <a href="/pages/organization.html?id=${org.id}" class="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1">
+                            View Details
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                            </svg>
+                        </a>
+                        ${isOwnerOrAdmin ? `
+                            <div class="flex gap-2">
+                                <button onclick="editOrganization('${org.id}')" class="text-gray-500 hover:text-blue-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors" title="Edit">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                    </svg>
+                                </button>
+                                ${org.user_role === 'owner' ? `
+                                    <button onclick="deleteOrganization('${org.id}', '${org.name.replace(/'/g, "\\'")}')" class="text-gray-500 hover:text-red-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors" title="Delete">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updatePagination(data) {
+            const pagination = document.getElementById('pagination');
+            const totalItems = data.totalItems || 0;
+            const totalPages = data.totalPages || 1;
+
+            if (totalItems === 0) {
+                pagination.classList.add('hidden');
+                return;
+            }
+
+            pagination.classList.remove('hidden');
+
+            const start = (currentPage - 1) * perPage + 1;
+            const end = Math.min(currentPage * perPage, totalItems);
+
+            document.getElementById('showing-start').textContent = start;
+            document.getElementById('showing-end').textContent = end;
+            document.getElementById('total-items').textContent = totalItems;
+
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentSearch = document.getElementById('org-search').value;
+                currentPage = 1;
+                loadOrganizations();
+            }, 300);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            loadOrganizations();
+        }
+
+        function showNewOrgModal() {
+            document.getElementById('new-org-modal').classList.remove('hidden');
+            document.getElementById('org-name').focus();
+        }
+
+        function hideNewOrgModal() {
+            document.getElementById('new-org-modal').classList.add('hidden');
+            document.getElementById('new-org-form').reset();
+        }
+
+        async function submitOrgForm(event) {
+            event.preventDefault();
+
+            const submitBtn = document.getElementById('submit-org-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+
+            const formData = {
+                name: document.getElementById('org-name').value,
+                description: document.getElementById('org-description').value || null
+            };
+
+            try {
+                const response = await fetch('/api/v1/organizations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to create organization');
+                }
+
+                App.showNotification('Organization created successfully!', 'success');
+                hideNewOrgModal();
+                loadOrganizations();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to create organization', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Organization';
+            }
+        }
+
+        let editingOrgId = null;
+
+        async function editOrganization(orgId) {
+            editingOrgId = orgId;
+
+            try {
+                const response = await fetch(`/api/v1/organizations/${orgId}`, {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch organization');
+
+                const org = await response.json();
+
+                // Populate the edit form
+                document.getElementById('edit-org-name').value = org.name || '';
+                document.getElementById('edit-org-description').value = org.description || '';
+
+                document.getElementById('edit-org-modal').classList.remove('hidden');
+            } catch (err) {
+                App.showNotification('Failed to load organization details', 'error');
+            }
+        }
+
+        function hideEditOrgModal() {
+            document.getElementById('edit-org-modal').classList.add('hidden');
+            editingOrgId = null;
+        }
+
+        async function submitEditOrgForm(event) {
+            event.preventDefault();
+
+            const submitBtn = document.getElementById('submit-edit-org-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            const formData = {
+                name: document.getElementById('edit-org-name').value,
+                description: document.getElementById('edit-org-description').value || null
+            };
+
+            try {
+                const response = await fetch(`/api/v1/organizations/${editingOrgId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to update organization');
+                }
+
+                App.showNotification('Organization updated successfully!', 'success');
+                hideEditOrgModal();
+                loadOrganizations();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to update organization', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Changes';
+            }
+        }
+
+        async function deleteOrganization(orgId, orgName) {
+            if (!confirm(`Are you sure you want to delete "${orgName}"? This will also delete all associated data (members, contacts, accounts, etc.) and cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/organizations/${orgId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to delete organization');
+                }
+
+                App.showNotification('Organization deleted successfully', 'success');
+                loadOrganizations();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to delete organization', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

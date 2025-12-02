@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meetings - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=3"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=8"></script>
+    <script src="/js/layout.js?v=1"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/theme.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="app-shell">
+    <!-- Header - Rendered by Layout.js -->
+    <header class="app-header"></header>
+
+    <!-- Module Navigation -->
+    <nav class="module-nav"></nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <div class="app-main-inner">
+            <!-- Page Header -->
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <nav class="page-breadcrumb">
+                        <a href="/pages/dashboard.html">Dashboard</a>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span>Governance</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span style="color: var(--color-text-primary); font-weight: 500;">Meetings</span>
+                    </nav>
+                    <h1 class="page-title">Meetings</h1>
+                    <p class="page-description">Manage your meetings and video conferences</p>
+                </div>
+                <button onclick="showNewMeetingModal()" class="btn btn-primary" style="padding: 0.75rem 1.25rem;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Create Meeting
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex gap-3 mb-8">
+                <button onclick="filterMeetings('all')" class="filter-btn px-5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-all shadow-sm" data-filter="all">
+                    All Meetings
+                </button>
+                <button onclick="filterMeetings('upcoming')" class="filter-btn px-5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-all shadow-sm" data-filter="upcoming">
+                    Upcoming
+                </button>
+                <button onclick="filterMeetings('past')" class="filter-btn px-5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-all shadow-sm" data-filter="past">
+                    Past
+                </button>
+            </div>
+
+            <!-- Meetings List -->
+            <div id="meetings-list" class="grid md:grid-cols-3 gap-5">
+                <div class="col-span-3 text-center py-16">
+                    <div class="inline-flex items-center gap-3 text-gray-400">
+                        <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                        </svg>
+                        <span class="text-lg">Loading meetings...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- New Meeting Modal -->
+    <div id="new-meeting-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-lg">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Create New Meeting</h2>
+                <button onclick="hideNewMeetingModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="new-meeting-form" class="space-y-5">
+                <!-- Template Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Use Template (Optional)</label>
+                    <select id="meeting-template" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="handleTemplateChange()">
+                        <option value="">-- No Template (Start from scratch) --</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-2">Templates pre-fill agenda items and meeting settings</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Meeting Title *</label>
+                    <input type="text" id="meeting-title" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="e.g., Board Meeting Q4 2024" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Meeting Type</label>
+                    <select id="meeting-type" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        <option value="general">General Meeting</option>
+                        <option value="board">Board Meeting</option>
+                        <option value="committee">Committee Meeting</option>
+                        <option value="election">Election Meeting</option>
+                        <option value="special">Special Meeting</option>
+                        <option value="emergency">Emergency Meeting</option>
+                        <option value="annual">Annual Meeting</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="meeting-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="3" placeholder="Meeting agenda and notes..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
+                        <input type="datetime-local" id="meeting-start" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                        <input type="datetime-local" id="meeting-end" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Quorum Required</label>
+                    <input type="number" id="meeting-quorum" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="e.g., 5 or leave empty" min="0">
+                    <p class="text-xs text-gray-500 mt-2">Number of voting members required for decisions</p>
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="meeting-video" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
+                        <div>
+                            <span class="font-medium text-gray-900">Enable video conferencing</span>
+                            <p class="text-sm text-gray-600">Participants can join via Jitsi Meet</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideNewMeetingModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Create Meeting</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+    </footer>
+
+    <script>
+        let currentFilter = 'all';
+        let templates = [];
+        let selectedTemplate = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+
+            // Initialize Layout system
+            Layout.init({ module: 'governance' });
+            Layout.renderModuleNav('governance', 'meetings');
+
+            // Set default start time
+            const now = new Date();
+            now.setHours(now.getHours() + 1, 0, 0, 0);
+            document.getElementById('meeting-start').value = now.toISOString().slice(0, 16);
+
+            // Load templates
+            await loadTemplates();
+
+            // Check if should open new meeting modal
+            if (App.getUrlParam('new') === '1') {
+                showNewMeetingModal();
+            }
+
+            await loadMeetings();
+
+            // Handle form submission
+            document.getElementById('new-meeting-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const templateId = document.getElementById('meeting-template').value;
+                const title = document.getElementById('meeting-title').value;
+                const meetingType = document.getElementById('meeting-type').value;
+                const description = document.getElementById('meeting-description').value;
+                const startTime = document.getElementById('meeting-start').value;
+                const endTime = document.getElementById('meeting-end').value;
+                const quorum = document.getElementById('meeting-quorum').value;
+                const enableVideo = document.getElementById('meeting-video').checked;
+
+                let meeting;
+
+                if (templateId) {
+                    // Create from template
+                    meeting = await App.createMeetingFromTemplate(templateId, {
+                        title,
+                        description,
+                        start_time: new Date(startTime).toISOString(),
+                        end_time: endTime ? new Date(endTime).toISOString() : null,
+                        meeting_type: meetingType,
+                        quorum_required: quorum ? parseInt(quorum) : null,
+                        enableVideo
+                    });
+                } else {
+                    // Create without template
+                    meeting = await App.createMeeting({
+                        title,
+                        description,
+                        start_time: new Date(startTime).toISOString(),
+                        end_time: endTime ? new Date(endTime).toISOString() : null,
+                        meeting_type: meetingType,
+                        quorum_required: quorum ? parseInt(quorum) : null,
+                        enableVideo
+                    });
+                }
+
+                if (meeting) {
+                    hideNewMeetingModal();
+                    window.location.href = `/pages/meeting.html?id=${meeting.id}`;
+                }
+            });
+        });
+
+        async function loadTemplates() {
+            try {
+                templates = await App.getTemplates();
+                const select = document.getElementById('meeting-template');
+
+                templates.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t.id;
+                    option.textContent = `${t.name} (${t.org_type})`;
+                    option.dataset.template = JSON.stringify(t);
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.log('Templates not available');
+            }
+        }
+
+        function handleTemplateChange() {
+            const select = document.getElementById('meeting-template');
+            const selectedOption = select.options[select.selectedIndex];
+
+            if (selectedOption.value && selectedOption.dataset.template) {
+                const template = JSON.parse(selectedOption.dataset.template);
+                selectedTemplate = template;
+
+                // Pre-fill title if empty
+                const titleInput = document.getElementById('meeting-title');
+                if (!titleInput.value && template.default_meeting_title) {
+                    titleInput.value = template.default_meeting_title;
+                }
+
+                // Set meeting type
+                if (template.default_meeting_type) {
+                    document.getElementById('meeting-type').value = template.default_meeting_type;
+                }
+
+                // Set quorum from template settings
+                if (template.settings) {
+                    try {
+                        const settings = typeof template.settings === 'string' ? JSON.parse(template.settings) : template.settings;
+                        if (settings.default_quorum) {
+                            document.getElementById('meeting-quorum').value = settings.default_quorum;
+                        }
+                    } catch (e) {}
+                }
+
+                App.showNotification(`Template "${template.name}" selected. Agenda items will be auto-created.`, 'success');
+            } else {
+                selectedTemplate = null;
+            }
+        }
+
+        async function loadMeetings() {
+            let filter = '';
+            if (currentFilter === 'upcoming') {
+                filter = 'status != "completed" && status != "cancelled"';
+            } else if (currentFilter === 'past') {
+                filter = 'status = "completed" || status = "cancelled"';
+            }
+
+            const meetings = await App.getMeetings(filter);
+            const container = document.getElementById('meetings-list');
+
+            // Update active filter button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter === currentFilter) {
+                    btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                    btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                    btn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+                }
+            });
+
+            if (meetings.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                            <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" class="text-gray-400">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">No meetings found</h3>
+                        <p class="text-gray-500 mb-6">Create your first meeting to get started</p>
+                        <button onclick="showNewMeetingModal()" class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            Create Meeting
+                        </button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = meetings.map(meeting => `
+                    <a href="/pages/meeting.html?id=${meeting.id}" class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-gray-200 transition-all duration-200">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="badge ${App.getStatusBadgeClass(meeting.status)}">${meeting.status.replace('_', ' ')}</span>
+                            ${meeting.jitsi_room ? `
+                                <span class="text-green-500" title="Video enabled">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                        <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                                    </svg>
+                                </span>
+                            ` : ''}
+                        </div>
+                        <h3 class="font-semibold text-gray-900 text-lg mb-3 group-hover:text-blue-600 transition-colors">${meeting.title}</h3>
+                        <div class="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-gray-400">
+                                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                            </svg>
+                            ${App.formatDate(meeting.start_time)}
+                        </div>
+                        ${meeting.meeting_type ? `
+                            <span class="inline-block text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg font-medium capitalize mb-3">${meeting.meeting_type}</span>
+                        ` : ''}
+                        ${meeting.description ? `
+                            <p class="text-sm text-gray-500 line-clamp-2 leading-relaxed">${meeting.description.slice(0, 100)}${meeting.description.length > 100 ? '...' : ''}</p>
+                        ` : ''}
+                    </a>
+                `).join('');
+            }
+        }
+
+        function filterMeetings(filter) {
+            currentFilter = filter;
+            loadMeetings();
+        }
+
+        function showNewMeetingModal() {
+            document.getElementById('new-meeting-modal').classList.remove('hidden');
+        }
+
+        function hideNewMeetingModal() {
+            document.getElementById('new-meeting-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

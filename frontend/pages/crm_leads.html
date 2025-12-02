@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Leads - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=3"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>OrgSuite</span>
+            </a>
+            <nav class="flex items-center gap-6" id="nav-menu"></nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-10">
+        <div class="max-w-6xl mx-auto px-6">
+            <!-- Organization Selector -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Organization</label>
+                <select id="org-selector" class="w-full md:w-80 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                    <option value="">Select organization...</option>
+                </select>
+            </div>
+
+            <!-- Page Header -->
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Leads</h1>
+                    <p class="text-gray-500 mt-1">Manage prospects before they become opportunities</p>
+                </div>
+                <button id="add-lead-btn" data-require-role="member"
+                    class="hidden inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    New Lead
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">🆕</span>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-new">0</p>
+                            <p class="text-sm text-gray-500">New</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">📞</span>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-contacted">0</p>
+                            <p class="text-sm text-gray-500">Contacted</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">✅</span>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-qualified">0</p>
+                            <p class="text-sm text-gray-500">Qualified</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">🔄</span>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-converted">0</p>
+                            <p class="text-sm text-gray-500">Converted</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">❌</span>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-disqualified">0</p>
+                            <p class="text-sm text-gray-500">Disqualified</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leads Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-900">All Leads</h2>
+                        <div class="flex items-center gap-2">
+                            <select id="status-filter" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm">
+                                <option value="">All Statuses</option>
+                                <option value="new">New</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="qualified">Qualified</option>
+                                <option value="disqualified">Disqualified</option>
+                                <option value="converted">Converted</option>
+                            </select>
+                            <input type="text" id="search-input" placeholder="Search leads..."
+                                class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm w-48">
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leads-list" class="divide-y divide-gray-100">
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                    Loading leads...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Lead Modal -->
+    <div id="lead-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-6 border-b border-gray-100">
+                <h3 id="modal-title" class="text-xl font-semibold text-gray-900">New Lead</h3>
+                <button onclick="hideLeadModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="lead-form" class="p-6 space-y-5">
+                <input type="hidden" id="lead-id" value="">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Lead Name *</label>
+                    <input type="text" id="lead-name" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="e.g., Acme Corp">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Name</label>
+                        <input type="text" id="lead-contact-name"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Company</label>
+                        <input type="text" id="lead-company"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="Company name">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="lead-email"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="email@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input type="tel" id="lead-phone"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="+1 (555) 123-4567">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="lead-status"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="qualified">Qualified</option>
+                            <option value="disqualified">Disqualified</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Source</label>
+                        <select id="lead-source"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="website">Website</option>
+                            <option value="referral">Referral</option>
+                            <option value="event">Event</option>
+                            <option value="cold_call">Cold Call</option>
+                            <option value="advertisement">Advertisement</option>
+                            <option value="social_media">Social Media</option>
+                            <option value="partner">Partner</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Website</label>
+                    <input type="url" id="lead-website"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="https://example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <textarea id="lead-notes" rows="3"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Additional information about this lead..."></textarea>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideLeadModal()"
+                        class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Save Lead
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Convert Lead Modal -->
+    <div id="convert-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Convert Lead</h3>
+            <p class="text-gray-600 mb-6">Converting <strong id="convert-lead-name"></strong> will create:</p>
+            <div class="space-y-3 mb-6">
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" id="convert-create-contact" checked class="w-4 h-4 text-blue-600">
+                    <span class="text-gray-700">Create a Contact</span>
+                </label>
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" id="convert-create-opportunity" checked class="w-4 h-4 text-blue-600">
+                    <span class="text-gray-700">Create an Opportunity</span>
+                </label>
+                <div id="opportunity-details" class="pl-7 space-y-3">
+                    <input type="text" id="convert-opp-title" placeholder="Opportunity title"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <input type="number" id="convert-opp-amount" placeholder="Expected amount"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button onclick="hideConvertModal()"
+                    class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmConvert()"
+                    class="px-5 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors">
+                    Convert Lead
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-red-600">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Delete Lead</h3>
+                    <p class="text-sm text-gray-500">This action cannot be undone.</p>
+                </div>
+            </div>
+            <p class="text-gray-600 mb-6">Are you sure you want to delete <strong id="delete-lead-name"></strong>?</p>
+            <div class="flex gap-3 justify-end">
+                <button onclick="hideDeleteModal()"
+                    class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmDelete()"
+                    class="px-5 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentOrgId = null;
+        let isAdmin = false;
+        let leads = [];
+        let leadToDelete = null;
+        let leadToConvert = null;
+
+        const STATUS_COLORS = {
+            new: 'bg-gray-100 text-gray-700',
+            contacted: 'bg-blue-100 text-blue-700',
+            qualified: 'bg-green-100 text-green-700',
+            disqualified: 'bg-red-100 text-red-700',
+            converted: 'bg-purple-100 text-purple-700'
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+            App.updateNav();
+
+            await loadOrganizations();
+
+            document.getElementById('org-selector').addEventListener('change', onOrgChange);
+            document.getElementById('status-filter').addEventListener('change', loadLeads);
+            document.getElementById('search-input').addEventListener('input', debounce(loadLeads, 300));
+            document.getElementById('lead-form').addEventListener('submit', handleLeadSubmit);
+            document.getElementById('add-lead-btn').addEventListener('click', showAddLeadModal);
+
+            // Toggle opportunity details visibility
+            document.getElementById('convert-create-opportunity').addEventListener('change', (e) => {
+                document.getElementById('opportunity-details').style.display = e.target.checked ? 'block' : 'none';
+            });
+        });
+
+        function debounce(fn, delay) {
+            let timer;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        async function loadOrganizations() {
+            const selector = document.getElementById('org-selector');
+            try {
+                const response = await API.organizations.list();
+                const orgs = response.items || response || [];
+
+                if (orgs.length === 0) {
+                    selector.innerHTML = '<option value="">No organizations found</option>';
+                } else {
+                    selector.innerHTML = '<option value="">Select organization...</option>' +
+                        orgs.map(org => `<option value="${org.id}">${UI.escapeHtml(org.name)}</option>`).join('');
+
+                    const urlOrgId = UI.getUrlParam('org');
+                    if (urlOrgId) {
+                        selector.value = urlOrgId;
+                        await onOrgChange();
+                    } else if (orgs.length === 1) {
+                        selector.value = orgs[0].id;
+                        await onOrgChange();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+            }
+        }
+
+        async function onOrgChange() {
+            currentOrgId = document.getElementById('org-selector').value;
+
+            if (!currentOrgId) {
+                document.getElementById('add-lead-btn').classList.add('hidden');
+                document.getElementById('leads-list').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            Select an organization to view leads.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            API.org.setCurrentId(currentOrgId);
+            isAdmin = await API.roles.hasMinRole('admin', currentOrgId);
+            const canCreate = await API.roles.hasMinRole('member', currentOrgId);
+
+            if (canCreate) {
+                document.getElementById('add-lead-btn').classList.remove('hidden');
+            }
+
+            await loadLeads();
+        }
+
+        async function loadLeads() {
+            const statusFilter = document.getElementById('status-filter').value;
+            const search = document.getElementById('search-input').value;
+
+            try {
+                const params = { perPage: 100 };
+                if (statusFilter) params.status = statusFilter;
+                if (search) params.search = search;
+
+                const response = await API.crm.leads.list(currentOrgId, params);
+                leads = response.items || [];
+
+                updateStats();
+                renderLeads();
+            } catch (err) {
+                console.error('Failed to load leads:', err);
+                UI.showError('Failed to load leads');
+            }
+        }
+
+        function updateStats() {
+            const counts = {
+                new: 0,
+                contacted: 0,
+                qualified: 0,
+                disqualified: 0,
+                converted: 0
+            };
+
+            leads.forEach(lead => {
+                if (counts[lead.status] !== undefined) {
+                    counts[lead.status]++;
+                }
+            });
+
+            document.getElementById('stat-new').textContent = counts.new;
+            document.getElementById('stat-contacted').textContent = counts.contacted;
+            document.getElementById('stat-qualified').textContent = counts.qualified;
+            document.getElementById('stat-disqualified').textContent = counts.disqualified;
+            document.getElementById('stat-converted').textContent = counts.converted;
+        }
+
+        function renderLeads() {
+            const container = document.getElementById('leads-list');
+
+            if (leads.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            No leads found. Create your first lead to get started.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            container.innerHTML = leads.map(lead => renderLeadRow(lead)).join('');
+        }
+
+        function renderLeadRow(lead) {
+            const statusClass = STATUS_COLORS[lead.status] || 'bg-gray-100 text-gray-700';
+            const statusText = UI.toTitleCase(lead.status);
+            const sourceText = UI.toTitleCase(lead.source);
+
+            const isConverted = lead.status === 'converted';
+            const canConvert = !isConverted && lead.status !== 'disqualified';
+
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div>
+                            <p class="font-medium text-gray-900">${UI.escapeHtml(lead.name)}</p>
+                            ${lead.company ? `<p class="text-sm text-gray-500">${UI.escapeHtml(lead.company)}</p>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm">
+                            ${lead.contact_name ? `<p class="text-gray-900">${UI.escapeHtml(lead.contact_name)}</p>` : ''}
+                            ${lead.email ? `<p class="text-gray-500">${UI.escapeHtml(lead.email)}</p>` : ''}
+                            ${lead.phone ? `<p class="text-gray-500">${UI.escapeHtml(lead.phone)}</p>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${sourceText}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${UI.formatShortDate(lead.created)}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            ${canConvert ? `
+                                <button onclick="convertLead('${lead.id}', '${UI.escapeHtml(lead.name).replace(/'/g, "\\'")}')"
+                                    class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                    Convert
+                                </button>
+                            ` : ''}
+                            <button onclick="editLead('${lead.id}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                Edit
+                            </button>
+                            ${isAdmin ? `
+                                <button onclick="deleteLead('${lead.id}', '${UI.escapeHtml(lead.name).replace(/'/g, "\\'")}')"
+                                    class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                    Delete
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function showAddLeadModal() {
+            document.getElementById('modal-title').textContent = 'New Lead';
+            document.getElementById('lead-form').reset();
+            document.getElementById('lead-id').value = '';
+            document.getElementById('lead-modal').classList.remove('hidden');
+        }
+
+        async function editLead(leadId) {
+            try {
+                const lead = await API.crm.leads.get(currentOrgId, leadId);
+                document.getElementById('modal-title').textContent = 'Edit Lead';
+                document.getElementById('lead-id').value = lead.id;
+                document.getElementById('lead-name').value = lead.name;
+                document.getElementById('lead-contact-name').value = lead.contact_name || '';
+                document.getElementById('lead-company').value = lead.company || '';
+                document.getElementById('lead-email').value = lead.email || '';
+                document.getElementById('lead-phone').value = lead.phone || '';
+                document.getElementById('lead-status').value = lead.status || 'new';
+                document.getElementById('lead-source').value = lead.source || 'other';
+                document.getElementById('lead-website').value = lead.website || '';
+                document.getElementById('lead-notes').value = lead.notes || '';
+                document.getElementById('lead-modal').classList.remove('hidden');
+            } catch (err) {
+                UI.showError('Failed to load lead');
+            }
+        }
+
+        function hideLeadModal() {
+            document.getElementById('lead-modal').classList.add('hidden');
+        }
+
+        async function handleLeadSubmit(e) {
+            e.preventDefault();
+
+            const leadId = document.getElementById('lead-id').value;
+            const payload = {
+                name: document.getElementById('lead-name').value,
+                contact_name: document.getElementById('lead-contact-name').value || null,
+                company: document.getElementById('lead-company').value || null,
+                email: document.getElementById('lead-email').value || null,
+                phone: document.getElementById('lead-phone').value || null,
+                status: document.getElementById('lead-status').value,
+                source: document.getElementById('lead-source').value,
+                website: document.getElementById('lead-website').value || null,
+                notes: document.getElementById('lead-notes').value || null
+            };
+
+            try {
+                if (leadId) {
+                    await API.crm.leads.update(currentOrgId, leadId, payload);
+                    UI.showSuccess('Lead updated!');
+                } else {
+                    await API.crm.leads.create(currentOrgId, payload);
+                    UI.showSuccess('Lead created!');
+                }
+                hideLeadModal();
+                await loadLeads();
+            } catch (err) {
+                UI.showError(err.message || 'Failed to save lead');
+            }
+        }
+
+        function convertLead(leadId, leadName) {
+            leadToConvert = { id: leadId, name: leadName };
+            document.getElementById('convert-lead-name').textContent = leadName;
+            document.getElementById('convert-create-contact').checked = true;
+            document.getElementById('convert-create-opportunity').checked = true;
+            document.getElementById('convert-opp-title').value = `Opportunity from ${leadName}`;
+            document.getElementById('convert-opp-amount').value = '';
+            document.getElementById('opportunity-details').style.display = 'block';
+            document.getElementById('convert-modal').classList.remove('hidden');
+        }
+
+        function hideConvertModal() {
+            document.getElementById('convert-modal').classList.add('hidden');
+            leadToConvert = null;
+        }
+
+        async function confirmConvert() {
+            if (!leadToConvert) return;
+
+            const createContact = document.getElementById('convert-create-contact').checked;
+            const createOpportunity = document.getElementById('convert-create-opportunity').checked;
+            const oppTitle = document.getElementById('convert-opp-title').value;
+            const oppAmount = document.getElementById('convert-opp-amount').value;
+
+            try {
+                await API.crm.leads.convert(currentOrgId, leadToConvert.id, {
+                    create_contact: createContact,
+                    create_opportunity: createOpportunity,
+                    opportunity_title: oppTitle || null,
+                    opportunity_amount: oppAmount ? parseFloat(oppAmount) : null
+                });
+
+                UI.showSuccess('Lead converted successfully!');
+                hideConvertModal();
+                await loadLeads();
+            } catch (err) {
+                UI.showError(err.message || 'Failed to convert lead');
+            }
+        }
+
+        function deleteLead(leadId, leadName) {
+            leadToDelete = { id: leadId, name: leadName };
+            document.getElementById('delete-lead-name').textContent = leadName;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            leadToDelete = null;
+        }
+
+        async function confirmDelete() {
+            if (!leadToDelete) return;
+
+            try {
+                await API.crm.leads.delete(currentOrgId, leadToDelete.id);
+                UI.showSuccess('Lead deleted!');
+                hideDeleteModal();
+                await loadLeads();
+            } catch (err) {
+                UI.showError(err.message || 'Failed to delete lead');
+            }
+        }
+    </script>
+</body>
+</html>

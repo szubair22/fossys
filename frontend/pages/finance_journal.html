@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal Entries - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col" hx-ext="json-enc">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>OrgSuite</span>
+            </a>
+            <nav class="flex items-center gap-6" id="nav-menu"></nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <!-- Organization Selector -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Organization</label>
+                <select id="org-selector" class="w-full max-w-xs px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="loadJournalEntries()">
+                    <option value="">Loading organizations...</option>
+                </select>
+            </div>
+
+            <!-- Page Header -->
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Journal Entries</h1>
+                    <p class="text-gray-500 mt-2">Record and manage financial transactions with double-entry bookkeeping</p>
+                </div>
+                <button onclick="showNewEntryModal()" class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    New Journal Entry
+                </button>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                <div class="flex flex-wrap gap-4 items-center">
+                    <!-- Status Filter -->
+                    <div class="flex gap-2">
+                        <button class="filter-btn active" data-status="" onclick="setStatusFilter(this, '')">All</button>
+                        <button class="filter-btn" data-status="draft" onclick="setStatusFilter(this, 'draft')">Draft</button>
+                        <button class="filter-btn" data-status="posted" onclick="setStatusFilter(this, 'posted')">Posted</button>
+                        <button class="filter-btn" data-status="voided" onclick="setStatusFilter(this, 'voided')">Voided</button>
+                    </div>
+                    <!-- Date Range -->
+                    <div class="flex gap-2 items-center">
+                        <input type="date" id="start-date" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="loadJournalEntries()">
+                        <span class="text-gray-400">to</span>
+                        <input type="date" id="end-date" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="loadJournalEntries()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Journal Entries Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Entry #</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Date</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Description</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
+                            <th class="text-right px-6 py-4 text-sm font-semibold text-gray-700">Debits</th>
+                            <th class="text-right px-6 py-4 text-sm font-semibold text-gray-700">Credits</th>
+                            <th class="text-right px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="entries-table-body">
+                        <tr>
+                            <td colspan="7" class="text-center py-16">
+                                <div class="inline-flex items-center gap-3 text-gray-400">
+                                    <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                    </svg>
+                                    <span>Select an organization to view journal entries</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="flex justify-between items-center mt-6 hidden">
+                <div class="text-sm text-gray-500">
+                    Showing <span id="showing-start">0</span>-<span id="showing-end">0</span> of <span id="total-items">0</span> entries
+                </div>
+                <div class="flex gap-2">
+                    <button id="prev-page" onclick="changePage(-1)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Previous</button>
+                    <button id="next-page" onclick="changePage(1)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- New Journal Entry Modal -->
+    <div id="new-entry-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-3xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">New Journal Entry</h2>
+                <button onclick="hideNewEntryModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="new-entry-form" class="space-y-5" onsubmit="submitEntryForm(event)">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Entry Date *</label>
+                        <input type="date" name="entry_date" id="entry-date" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Reference</label>
+                        <input type="text" name="reference" id="entry-reference" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., INV-001, CHK-123">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                    <input type="text" name="description" id="entry-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Brief description of the transaction" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <textarea name="notes" id="entry-notes" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2"></textarea>
+                </div>
+
+                <!-- Journal Lines -->
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="text-sm font-medium text-gray-700">Journal Lines</label>
+                        <button type="button" onclick="addJournalLine()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add Line</button>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Account</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Description</th>
+                                    <th class="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase w-32">Debit</th>
+                                    <th class="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase w-32">Credit</th>
+                                    <th class="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="journal-lines">
+                                <!-- Lines added dynamically -->
+                            </tbody>
+                            <tfoot class="bg-gray-50 border-t border-gray-200">
+                                <tr>
+                                    <td colspan="2" class="px-4 py-3 text-right font-semibold text-gray-700">Totals:</td>
+                                    <td class="px-4 py-3 text-right font-semibold text-gray-900" id="total-debits">$0.00</td>
+                                    <td class="px-4 py-3 text-right font-semibold text-gray-900" id="total-credits">$0.00</td>
+                                    <td></td>
+                                </tr>
+                                <tr id="balance-row" class="hidden">
+                                    <td colspan="2" class="px-4 py-2 text-right text-sm">Difference:</td>
+                                    <td colspan="2" class="px-4 py-2 text-center text-sm font-semibold text-red-600" id="balance-diff">$0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Entry must be balanced: total debits must equal total credits.</p>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideNewEntryModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" id="submit-entry-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Create Entry (Draft)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Void Entry Modal -->
+    <div id="void-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Void Journal Entry</h2>
+                <button onclick="hideVoidModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="void-form" onsubmit="submitVoidForm(event)">
+                <input type="hidden" id="void-entry-id">
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason for voiding *</label>
+                    <textarea id="void-reason" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" required placeholder="Explain why this entry is being voided..."></textarea>
+                </div>
+                <div class="flex gap-3 justify-end">
+                    <button type="button" onclick="hideVoidModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors shadow-sm">Void Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentPage = 1;
+        let currentStatus = '';
+        let accounts = [];
+        let lineCounter = 0;
+        const perPage = 30;
+
+        document.body.addEventListener('htmx:configRequest', function(event) {
+            const token = App.pb?.authStore?.token;
+            if (token) {
+                event.detail.headers['Authorization'] = `Bearer ${token}`;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+            App.updateNav();
+
+            // Set default date to today
+            document.getElementById('entry-date').valueAsDate = new Date();
+
+            await loadOrganizations();
+        });
+
+        async function loadOrganizations() {
+            const selector = document.getElementById('org-selector');
+            try {
+                const orgs = await App.getOrganizations();
+                if (orgs.length === 0) {
+                    selector.innerHTML = '<option value="">No organizations found</option>';
+                } else {
+                    selector.innerHTML = '<option value="">Select organization...</option>' +
+                        orgs.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
+
+                    const urlOrgId = App.getUrlParam('org');
+                    if (urlOrgId) {
+                        selector.value = urlOrgId;
+                        loadJournalEntries();
+                    } else if (orgs.length === 1) {
+                        selector.value = orgs[0].id;
+                        loadJournalEntries();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+                selector.innerHTML = '<option value="">Error loading organizations</option>';
+            }
+        }
+
+        async function loadAccounts() {
+            const orgId = document.getElementById('org-selector').value;
+            if (!orgId) return;
+
+            try {
+                const response = await fetch(`/api/v1/finance/accounts?organization_id=${orgId}&is_active=true&perPage=500`, {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    accounts = data.items || [];
+                }
+            } catch (err) {
+                console.error('Failed to load accounts:', err);
+            }
+        }
+
+        async function loadJournalEntries() {
+            const orgId = document.getElementById('org-selector').value;
+            const tbody = document.getElementById('entries-table-body');
+
+            if (!orgId) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-16 text-gray-400">
+                            Select an organization to view journal entries
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('pagination').classList.add('hidden');
+                return;
+            }
+
+            // Load accounts for the modal
+            await loadAccounts();
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-16">
+                        <div class="inline-flex items-center gap-3 text-gray-400">
+                            <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                            </svg>
+                            <span>Loading journal entries...</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            try {
+                let url = `/api/v1/finance/journal-entries?organization_id=${orgId}&page=${currentPage}&perPage=${perPage}`;
+                if (currentStatus) url += `&status=${currentStatus}`;
+
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+                if (startDate) url += `&start_date=${startDate}`;
+                if (endDate) url += `&end_date=${endDate}`;
+
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch journal entries');
+
+                const data = await response.json();
+                renderJournalEntries(data);
+            } catch (err) {
+                console.error('Failed to load journal entries:', err);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-16 text-red-500">
+                            Failed to load journal entries. Please try again.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderJournalEntries(data) {
+            const tbody = document.getElementById('entries-table-body');
+            const entries = data.items || [];
+
+            if (entries.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-16">
+                            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" class="text-gray-400">
+                                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No journal entries found</h3>
+                            <p class="text-gray-500">Create your first journal entry to start recording transactions</p>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('pagination').classList.add('hidden');
+                return;
+            }
+
+            tbody.innerHTML = entries.map(entry => `
+                <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <span class="font-mono text-sm font-medium text-gray-900">${entry.entry_number}</span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">${App.formatShortDate(entry.entry_date)}</td>
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-gray-900">${entry.description}</div>
+                        ${entry.reference ? `<div class="text-sm text-gray-500">Ref: ${entry.reference}</div>` : ''}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="badge ${getStatusBadgeClass(entry.status)}">${entry.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right font-mono text-gray-900">${formatCurrency(entry.total_debits)}</td>
+                    <td class="px-6 py-4 text-right font-mono text-gray-900">${formatCurrency(entry.total_credits)}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="viewEntry('${entry.id}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm">View</button>
+                            ${entry.status === 'draft' ? `
+                                <button onclick="postEntry('${entry.id}')" class="text-green-600 hover:text-green-800 font-medium text-sm">Post</button>
+                            ` : ''}
+                            ${entry.status === 'posted' ? `
+                                <button onclick="showVoidModal('${entry.id}')" class="text-red-600 hover:text-red-800 font-medium text-sm">Void</button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            updatePagination(data);
+        }
+
+        function getStatusBadgeClass(status) {
+            const classes = {
+                draft: 'bg-gray-100 text-gray-700',
+                posted: 'bg-green-100 text-green-700',
+                voided: 'bg-red-100 text-red-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        }
+
+        function formatCurrency(amount) {
+            const num = parseFloat(amount) || 0;
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(num);
+        }
+
+        function updatePagination(data) {
+            const pagination = document.getElementById('pagination');
+            const totalItems = data.totalItems || 0;
+            const totalPages = data.totalPages || 1;
+
+            if (totalItems === 0) {
+                pagination.classList.add('hidden');
+                return;
+            }
+
+            pagination.classList.remove('hidden');
+
+            const start = (currentPage - 1) * perPage + 1;
+            const end = Math.min(currentPage * perPage, totalItems);
+
+            document.getElementById('showing-start').textContent = start;
+            document.getElementById('showing-end').textContent = end;
+            document.getElementById('total-items').textContent = totalItems;
+
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+        }
+
+        function setStatusFilter(btn, status) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentStatus = status;
+            currentPage = 1;
+            loadJournalEntries();
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            loadJournalEntries();
+        }
+
+        function showNewEntryModal() {
+            const orgId = document.getElementById('org-selector').value;
+            if (!orgId) {
+                App.showNotification('Please select an organization first', 'error');
+                return;
+            }
+
+            // Reset form
+            document.getElementById('new-entry-form').reset();
+            document.getElementById('entry-date').valueAsDate = new Date();
+            document.getElementById('journal-lines').innerHTML = '';
+            lineCounter = 0;
+
+            // Add initial two lines
+            addJournalLine();
+            addJournalLine();
+
+            document.getElementById('new-entry-modal').classList.remove('hidden');
+        }
+
+        function hideNewEntryModal() {
+            document.getElementById('new-entry-modal').classList.add('hidden');
+        }
+
+        function addJournalLine() {
+            const tbody = document.getElementById('journal-lines');
+            const lineId = ++lineCounter;
+
+            const accountOptions = accounts.map(a => `<option value="${a.id}">${a.code} - ${a.name}</option>`).join('');
+
+            const row = document.createElement('tr');
+            row.id = `line-${lineId}`;
+            row.className = 'border-t border-gray-100';
+            row.innerHTML = `
+                <td class="px-4 py-2">
+                    <select name="lines[${lineId}][account_id]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        <option value="">Select account...</option>
+                        ${accountOptions}
+                    </select>
+                </td>
+                <td class="px-4 py-2">
+                    <input type="text" name="lines[${lineId}][description]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Line description">
+                </td>
+                <td class="px-4 py-2">
+                    <input type="number" name="lines[${lineId}][debit]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-right focus:ring-2 focus:ring-blue-500 focus:border-blue-500" step="0.01" min="0" placeholder="0.00" oninput="updateTotals()">
+                </td>
+                <td class="px-4 py-2">
+                    <input type="number" name="lines[${lineId}][credit]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-right focus:ring-2 focus:ring-blue-500 focus:border-blue-500" step="0.01" min="0" placeholder="0.00" oninput="updateTotals()">
+                </td>
+                <td class="px-2">
+                    <button type="button" onclick="removeLine(${lineId})" class="p-1 text-gray-400 hover:text-red-600 transition-colors">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function removeLine(lineId) {
+            const row = document.getElementById(`line-${lineId}`);
+            if (row) {
+                row.remove();
+                updateTotals();
+            }
+        }
+
+        function updateTotals() {
+            let totalDebits = 0;
+            let totalCredits = 0;
+
+            document.querySelectorAll('#journal-lines tr').forEach(row => {
+                const debitInput = row.querySelector('input[name*="[debit]"]');
+                const creditInput = row.querySelector('input[name*="[credit]"]');
+
+                if (debitInput) totalDebits += parseFloat(debitInput.value) || 0;
+                if (creditInput) totalCredits += parseFloat(creditInput.value) || 0;
+            });
+
+            document.getElementById('total-debits').textContent = formatCurrency(totalDebits);
+            document.getElementById('total-credits').textContent = formatCurrency(totalCredits);
+
+            const diff = Math.abs(totalDebits - totalCredits);
+            const balanceRow = document.getElementById('balance-row');
+            const balanceDiff = document.getElementById('balance-diff');
+
+            if (diff > 0.01) {
+                balanceRow.classList.remove('hidden');
+                balanceDiff.textContent = formatCurrency(diff);
+            } else {
+                balanceRow.classList.add('hidden');
+            }
+        }
+
+        async function submitEntryForm(event) {
+            event.preventDefault();
+
+            const orgId = document.getElementById('org-selector').value;
+            const submitBtn = document.getElementById('submit-entry-btn');
+
+            // Collect lines
+            const lines = [];
+            document.querySelectorAll('#journal-lines tr').forEach(row => {
+                const accountSelect = row.querySelector('select[name*="[account_id]"]');
+                const descInput = row.querySelector('input[name*="[description]"]');
+                const debitInput = row.querySelector('input[name*="[debit]"]');
+                const creditInput = row.querySelector('input[name*="[credit]"]');
+
+                if (accountSelect && accountSelect.value) {
+                    const debit = parseFloat(debitInput.value) || 0;
+                    const credit = parseFloat(creditInput.value) || 0;
+
+                    if (debit > 0 || credit > 0) {
+                        lines.push({
+                            account_id: accountSelect.value,
+                            description: descInput.value || null,
+                            debit: debit,
+                            credit: credit
+                        });
+                    }
+                }
+            });
+
+            if (lines.length < 2) {
+                App.showNotification('Journal entry must have at least 2 lines', 'error');
+                return;
+            }
+
+            // Check balance
+            const totalDebits = lines.reduce((sum, l) => sum + l.debit, 0);
+            const totalCredits = lines.reduce((sum, l) => sum + l.credit, 0);
+
+            if (Math.abs(totalDebits - totalCredits) > 0.01) {
+                App.showNotification('Journal entry must be balanced (debits = credits)', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+
+            const formData = {
+                entry_date: document.getElementById('entry-date').value,
+                description: document.getElementById('entry-description').value,
+                reference: document.getElementById('entry-reference').value || null,
+                notes: document.getElementById('entry-notes').value || null,
+                lines: lines
+            };
+
+            try {
+                const response = await fetch(`/api/v1/finance/journal-entries?organization_id=${orgId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to create journal entry');
+                }
+
+                App.showNotification('Journal entry created!', 'success');
+                hideNewEntryModal();
+                loadJournalEntries();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to create journal entry', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Entry (Draft)';
+            }
+        }
+
+        async function postEntry(entryId) {
+            if (!confirm('Are you sure you want to post this entry? Posted entries cannot be edited.')) return;
+
+            const orgId = document.getElementById('org-selector').value;
+
+            try {
+                const response = await fetch(`/api/v1/finance/journal-entries/${entryId}/post?organization_id=${orgId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to post entry');
+                }
+
+                App.showNotification('Journal entry posted!', 'success');
+                loadJournalEntries();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to post entry', 'error');
+            }
+        }
+
+        function showVoidModal(entryId) {
+            document.getElementById('void-entry-id').value = entryId;
+            document.getElementById('void-reason').value = '';
+            document.getElementById('void-modal').classList.remove('hidden');
+        }
+
+        function hideVoidModal() {
+            document.getElementById('void-modal').classList.add('hidden');
+        }
+
+        async function submitVoidForm(event) {
+            event.preventDefault();
+
+            const entryId = document.getElementById('void-entry-id').value;
+            const reason = document.getElementById('void-reason').value;
+            const orgId = document.getElementById('org-selector').value;
+
+            try {
+                const response = await fetch(`/api/v1/finance/journal-entries/${entryId}/void?organization_id=${orgId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify({ reason })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to void entry');
+                }
+
+                App.showNotification('Journal entry voided!', 'success');
+                hideVoidModal();
+                loadJournalEntries();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to void entry', 'error');
+            }
+        }
+
+        function viewEntry(entryId) {
+            App.showNotification('View details coming soon', 'info');
+        }
+    </script>
+</body>
+</html>

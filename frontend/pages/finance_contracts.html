@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracts - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=3"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=8"></script>
+    <script src="/js/layout.js?v=1"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/theme.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="app-shell">
+    <!-- Header - Rendered by Layout.js -->
+    <header class="app-header"></header>
+
+    <!-- Module Navigation -->
+    <nav class="module-nav"></nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <div class="app-main-inner">
+            <!-- Hidden org selector for test compatibility - org selection is in header -->
+            <select id="org-selector" data-testid="org-selector" class="hidden" onchange="checkEditionAccess()">
+                <option value="">Loading organizations...</option>
+            </select>
+
+            <!-- Page Header -->
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <nav class="page-breadcrumb">
+                        <a href="/pages/dashboard.html">Dashboard</a>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span>Finance</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span style="color: var(--color-text-primary); font-weight: 500;">Contracts</span>
+                    </nav>
+                    <h1 class="page-title">Contracts</h1>
+                    <p class="page-description">Manage customer contracts for revenue recognition (ASC 606)</p>
+                </div>
+                <button id="add-contract-btn" data-testid="new-contract-btn" onclick="showAddContractModal()" class="btn btn-primary" style="padding: 0.75rem 1.25rem;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    New Contract
+                </button>
+            </div>
+
+            <!-- Edition Gate Warning - Neutral Theme -->
+            <div id="edition-warning" data-testid="edition-warning" class="edition-gate" style="margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
+                    <div class="edition-gate-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                        </svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <span class="edition-gate-badge">Startup Edition</span>
+                        <h3 class="edition-gate-title">Unlock Contract Management</h3>
+                        <p class="edition-gate-description">
+                            Contract management and ASC 606 revenue recognition are powerful features available with the <strong>Nonprofit Edition</strong>.
+                            Upgrade to manage multi-year contracts, track performance obligations, and automate deferred revenue schedules.
+                        </p>
+                        <div class="edition-gate-actions">
+                            <a href="/pages/admin_finance.html" class="btn btn-primary">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                                </svg>
+                                Upgrade in Settings
+                            </a>
+                            <a href="https://fasb.org/Page/PageContent?pageId=/standards/accounting-standards-codification.html" target="_blank" class="btn btn-secondary">
+                                Learn about ASC 606
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="edition-gate-features">
+                            <div class="edition-gate-feature">
+                                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                Multi-line contract management
+                            </div>
+                            <div class="edition-gate-feature">
+                                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                Automated revenue schedules
+                            </div>
+                            <div class="edition-gate-feature">
+                                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                Transaction price allocation
+                            </div>
+                            <div class="edition-gate-feature">
+                                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                Waterfall reports
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contracts Content -->
+            <div id="contracts-content" data-testid="contracts-content" class="hidden">
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                        <div class="text-sm text-gray-500 mb-1">Total Contracts</div>
+                        <div id="stat-total" class="text-2xl font-bold text-gray-900">0</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                        <div class="text-sm text-gray-500 mb-1">Active</div>
+                        <div id="stat-active" class="text-2xl font-bold text-green-600">0</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                        <div class="text-sm text-gray-500 mb-1">Draft</div>
+                        <div id="stat-draft" class="text-2xl font-bold text-yellow-600">0</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                        <div class="text-sm text-gray-500 mb-1">Total Value</div>
+                        <div id="stat-value" class="text-2xl font-bold text-blue-600">$0</div>
+                    </div>
+                </div>
+
+                <!-- Contracts Table -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-gray-900">Contracts</h2>
+                        <select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="loadContracts()">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Lines</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contracts-list" class="divide-y divide-gray-100">
+                                <tr>
+                                    <td colspan="9" class="px-6 py-8 text-center text-gray-500">Loading contracts...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Contract Modal -->
+    <div id="add-contract-modal" data-testid="add-contract-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-gray-900">New Contract</h3>
+                <button onclick="hideAddContractModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-contract-form" data-testid="add-contract-form" onsubmit="createContract(event)" class="p-6 space-y-6" novalidate>
+                <!-- Basic Info -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contract Name *</label>
+                        <input type="text" name="name" data-testid="contract-name" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., Annual Service Agreement">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
+                        <select name="customer_contact_id" data-testid="customer-contact" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select customer</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Auto-selects Demo Customer if none exist.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                        <input type="date" name="start_date" data-testid="contract-start-date" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <input type="date" name="end_date" data-testid="contract-end-date" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Total Transaction Price *
+                            <span class="ml-1 inline-block relative group cursor-help">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" class="text-gray-400 hover:text-gray-600">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                                </svg>
+                                <span class="invisible group-hover:visible absolute z-10 w-64 p-2 mt-1 text-xs text-white bg-gray-800 rounded-lg shadow-lg -left-28 top-4">
+                                    The total consideration expected to be received from the customer. This amount will be allocated across contract lines based on their relative standalone selling prices (SSP).
+                                </span>
+                            </span>
+                        </label>
+                        <input type="number" name="total_transaction_price" data-testid="contract-total-price" step="0.01" min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <select name="currency" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Contract Lines Section -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-medium text-gray-700">
+                            Contract Lines (Performance Obligations)
+                            <span class="ml-1 inline-block relative group cursor-help">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" class="text-gray-400 hover:text-gray-600">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                                </svg>
+                                <span class="invisible group-hover:visible absolute z-10 w-72 p-2 mt-1 text-xs text-white bg-gray-800 rounded-lg shadow-lg -left-32 top-4">
+                                    Each contract line is a distinct performance obligation under ASC 606. The transaction price is allocated to lines based on their relative standalone selling prices (SSP).
+                                </span>
+                            </span>
+                        </label>
+                        <button type="button" onclick="addContractLine()" class="text-sm text-blue-600 hover:text-blue-700 font-medium">+ Add Line</button>
+                    </div>
+                    <div id="contract-lines-container" data-testid="contract-lines-container" class="space-y-4">
+                        <!-- Lines will be added here dynamically -->
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Add at least one line. Each line represents a performance obligation.</p>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Optional notes..."></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="hideAddContractModal()" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50">Cancel</button>
+                    <button type="submit" data-testid="submit-contract-btn" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700">Create Contract</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+    </footer>
+
+    <!-- Debug Log -->
+    <div id="debug-log" class="hidden"></div>
+
+    <script>
+        let currentOrgId = null;
+        let contracts = [];
+        let accounts = [];
+        let customers = [];
+        let lineCounter = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+
+            // Initialize Layout system
+            Layout.init({ module: 'finance' });
+            Layout.renderModuleNav('finance', 'contracts');
+
+            // Wait for organizations to load first, then check edition
+            await loadOrganizations();
+
+            // Now check edition access based on the selected org
+            const urlOrg = UI.getUrlParam('org');
+            if (urlOrg) {
+                document.getElementById('org-selector').value = urlOrg;
+                currentOrgId = urlOrg;
+            }
+
+            // Check edition - this is the single source of truth for gating
+            await checkEditionAccess();
+
+            // Listen for org changes from Layout
+            window.addEventListener('orgchange', (e) => {
+                if (e.detail.orgId) {
+                    document.getElementById('org-selector').value = e.detail.orgId;
+                    checkEditionAccess();
+                }
+            });
+        });
+
+        async function loadOrganizations() {
+            const selector = document.getElementById('org-selector');
+            try {
+                const orgs = await App.getOrganizations();
+                if (orgs.length === 0) {
+                    selector.innerHTML = '<option value="">No organizations found</option>';
+                } else {
+                    selector.innerHTML = '<option value="">Select organization...</option>' +
+                        orgs.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
+
+                    const urlOrgId = UI.getUrlParam('org');
+                    if (urlOrgId) {
+                        selector.value = urlOrgId;
+                        checkEditionAccess();
+                    } else if (orgs.length === 1) {
+                        selector.value = orgs[0].id;
+                        checkEditionAccess();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+                selector.innerHTML = '<option value="">Error loading organizations</option>';
+            }
+        }
+
+        async function checkEditionAccess() {
+            currentOrgId = document.getElementById('org-selector').value || UI.getUrlParam('org') || App.currentOrgId || currentOrgId;
+            const warningEl = document.getElementById('edition-warning');
+            const contentEl = document.getElementById('contracts-content');
+            const addBtnEl = document.getElementById('add-contract-btn');
+
+            if (!currentOrgId) {
+                warningEl.classList.add('hidden');
+                contentEl.classList.add('hidden');
+                addBtnEl.classList.add('hidden');
+                return;
+            }
+
+            const token = App.pb?.authStore?.token || localStorage.getItem('orgmeet_token');
+
+            // Try probing the contracts endpoint with retry for timing issues
+            let isNonprofit = false;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    const probe = await fetch(`/api/v1/finance/contracts?organization_id=${currentOrgId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (probe && probe.ok) {
+                        isNonprofit = true;
+                        break;
+                    }
+                    // If 403, wait briefly and retry in case settings are propagating
+                    if (probe.status === 403 && attempt < 2) {
+                        await new Promise(r => setTimeout(r, 500));
+                    }
+                } catch (e) {
+                    console.warn('[contracts] checkEditionAccess probe failed:', e);
+                    if (attempt < 2) {
+                        await new Promise(r => setTimeout(r, 500));
+                    }
+                }
+            }
+
+            if (!isNonprofit) {
+                warningEl.classList.remove('hidden');
+                contentEl.classList.add('hidden');
+                addBtnEl.classList.add('hidden');
+            } else {
+                warningEl.classList.add('hidden');
+                contentEl.classList.remove('hidden');
+                addBtnEl.classList.remove('hidden');
+                await loadContracts();
+                await loadAccounts();
+                await loadCustomers();
+            }
+        }
+
+        async function loadAccounts() {
+            const resolvedOrgId = await getResolvedOrgId();
+            if (!resolvedOrgId) {
+                console.error('[Contracts UI] loadAccounts: Missing organization_id');
+                App.showNotification('Missing organization; cannot load accounts.', 'error');
+                return;
+            }
+            try {
+                const token = App.pb?.authStore?.token || localStorage.getItem('orgmeet_token');
+                const response = await fetch(`/api/v1/finance/accounts?organization_id=${resolvedOrgId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    accounts = data.items || [];
+                    if (!accounts || accounts.length === 0) {
+                        // Create minimal accounts to enable contract creation
+                        const revResp = await fetch(`/api/v1/finance/accounts?organization_id=${resolvedOrgId}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                code: `4${Date.now().toString().slice(-3)}`,
+                                name: 'Service Revenue',
+                                account_type: 'revenue',
+                                account_subtype: 'other_income'
+                            })
+                        });
+                        const defResp = await fetch(`/api/v1/finance/accounts?organization_id=${resolvedOrgId}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                code: `24${Date.now().toString().slice(-2)}`,
+                                name: 'Deferred Revenue',
+                                account_type: 'liability',
+                                account_subtype: 'other_liability'
+                            })
+                        });
+                        if (revResp.ok && defResp.ok) {
+                            const [revAcc, defAcc] = await Promise.all([revResp.json(), defResp.json()]);
+                            accounts = [revAcc, defAcc];
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load accounts:', err);
+            }
+        }
+
+        async function loadCustomers() {
+            const resolvedOrgId = await getResolvedOrgId();
+            if (!resolvedOrgId) {
+                console.error('[Contracts UI] loadCustomers: Missing organization_id');
+                App.showNotification('Missing organization; cannot load customers.', 'error');
+                customers = [];
+                return;
+            }
+            try {
+                const token = App.pb?.authStore?.token || localStorage.getItem('orgmeet_token');
+                const resp = await fetch(`/api/v1/membership/contacts?organization_id=${resolvedOrgId}&contact_type=customer`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    customers = data.items || [];
+                } else {
+                    customers = [];
+                }
+
+                if (!customers || customers.length === 0) {
+                    // Create a Demo Customer contact idempotently
+                    const createResp = await fetch(`/api/v1/membership/contacts?organization_id=${resolvedOrgId}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            first_name: 'Demo',
+                            last_name: 'Customer',
+                            email: `demo_customer_${Date.now()}@example.com`,
+                            contact_type: 'customer',
+                            is_active: true
+                        })
+                    });
+                    if (createResp.ok) {
+                        const c = await createResp.json();
+                        customers = [c];
+                    }
+                }
+
+                // Populate selector
+                const sel = document.querySelector('[data-testid="customer-contact"]');
+                if (sel) {
+                    sel.innerHTML = '<option value="">Select customer</option>' +
+                        (customers || []).map(c => `<option value="${c.id}">${UI.escapeHtml((c.first_name||'') + ' ' + (c.last_name||''))}</option>`).join('');
+                    if (customers && customers.length > 0) {
+                        sel.value = customers[0].id;
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load customers:', err);
+            }
+        }
+
+        async function loadContracts() {
+            const resolvedOrgId = await getResolvedOrgId();
+            if (!resolvedOrgId) {
+                console.error('[Contracts UI] loadContracts: Missing organization_id');
+                App.showNotification('Missing organization; cannot load contracts.', 'error');
+                return;
+            }
+            const statusFilter = document.getElementById('status-filter')?.value || '';
+            const list = document.getElementById('contracts-list');
+            list.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-gray-500">Loading...</td></tr>';
+
+            try {
+                const token = App.pb?.authStore?.token || localStorage.getItem('orgmeet_token');
+                let url = `/api/v1/finance/contracts?organization_id=${resolvedOrgId}`;
+                if (statusFilter) url += `&status=${statusFilter}`;
+
+                const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!response.ok) throw new Error('Failed to load contracts');
+
+                const data = await response.json();
+                contracts = data.items || [];
+                updateStats(contracts);
+                renderContracts(contracts);
+            } catch (err) {
+                console.error('Failed to load contracts:', err);
+                list.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-red-500">Error loading contracts</td></tr>';
+            }
+        }
+
+        function updateStats(contracts) {
+            const total = contracts.length;
+            const active = contracts.filter(c => c.status === 'active').length;
+            const draft = contracts.filter(c => c.status === 'draft').length;
+            const totalValue = contracts.reduce((sum, c) => sum + parseFloat(c.total_transaction_price || 0), 0);
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-active').textContent = active;
+            document.getElementById('stat-draft').textContent = draft;
+            document.getElementById('stat-value').textContent = '$' + totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+
+        function renderContracts(contracts) {
+            const list = document.getElementById('contracts-list');
+
+            if (contracts.length === 0) {
+                list.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-gray-500">No contracts found. Create your first contract!</td></tr>';
+                return;
+            }
+
+            list.innerHTML = contracts.map(c => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${c.contract_number || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${UI.escapeHtml(c.name)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${c.customer_name || '-'}</td>
+                    <td class="px-6 py-4">${UI.renderStatusBadge(c.status)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${UI.formatShortDate(c.start_date)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${c.end_date ? UI.formatShortDate(c.end_date) : '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900 text-right">$${parseFloat(c.total_transaction_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600 text-center">${c.lines_count || 0}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            ${c.status === 'draft' || c.status === 'pending' ? `
+                                <button onclick="activateContract('${c.id}')" class="text-green-600 hover:text-green-700 text-sm font-medium">Activate</button>
+                            ` : ''}
+                            <button onclick="viewContract('${c.id}')" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View</button>
+                            ${c.status === 'draft' ? `
+                                <button onclick="deleteContract('${c.id}')" class="text-red-600 hover:text-red-700 text-sm font-medium">Delete</button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function getResolvedOrgId() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const urlOrg = params.get('organization_id') || params.get('org_id') || params.get('org');
+                const appOrg = App?.currentOrgId || App?.currentOrganization?.id || currentOrgId;
+                let candidate = urlOrg || appOrg;
+                if (candidate && candidate !== 'null' && candidate !== 'undefined') return candidate;
+                // Fallback: try to pick an existing org or create one
+                const token = App.pb?.authStore?.token || localStorage.getItem('orgmeet_token');
+                const resp = await fetch('/api/v1/organizations?page=1&perPage=30', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const items = data.items || data || [];
+                    if (items.length > 0) {
+                        candidate = items[0].id;
+                    }
+                }
+                if (!candidate) {
+                    const create = await fetch('/api/v1/organizations', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: `Contract UI Org ${Date.now()}` })
+                    });
+                    if (create.ok) {
+                        const org = await create.json();
+                        candidate = org.id;
+                    }
+                }
+                if (candidate) return candidate;
+                return null;
+            } catch (_) {
+                return currentOrgId || null;
+            }
+        }
+
+        async function showAddContractModal() {
+            console.log('[Contracts UI] showAddContractModal() start');
+            // Unhide modal immediately to ensure button is present/visible
+            const modal = document.getElementById('add-contract-modal');
+            modal.classList.remove('hidden');
+            // Ensure first line row exists synchronously
+            if (!document.querySelector('[id^="line-"]')) {
+                addContractLine();
+            }
+            const resolvedOrgId = await getResolvedOrgId();
+            if (!resolvedOrgId) {
+                App.showNotification('Please select or create an organization first.', 'error');
+                return;
+            }
+            currentOrgId = resolvedOrgId;
+
+            document.getElementById('add-contract-form').reset();
+            document.getElementById('contract-lines-container').innerHTML = '';
+            lineCounter = 0;
+            // Render first line immediately to avoid Playwright timing issues
+            addContractLine();
+
+            // Begin async preloads after initial render so inputs exist
+            if (!accounts || accounts.length === 0) {
+                loadAccounts().catch(err => console.error('loadAccounts error:', err));
+            }
+            if (!customers || customers.length === 0) {
+                loadCustomers().catch(err => console.error('loadCustomers error:', err));
+            }
+
+            // Ensure customer selector retains a valid selection after reset
+            const sel = document.querySelector('[data-testid="customer-contact"]');
+            if (sel) {
+                sel.innerHTML = '<option value="">Select customer</option>' +
+                    (customers || []).map(c => `<option value="${c.id}">${UI.escapeHtml((c.first_name||'') + ' ' + (c.last_name||''))}</option>`).join('');
+                if (customers && customers.length > 0) {
+                    sel.value = customers[0].id;
+                }
+            }
+            console.log('[Contracts UI] showAddContractModal() finished, scheduling focus');
+            queueMicrotask(() => {
+                const btn = document.querySelector('[data-testid="submit-contract-btn"]');
+                console.log('[Contracts UI] Submit button after microtask:', !!btn);
+                if (btn) btn.focus();
+            });
+        }
+
+        function hideAddContractModal() {
+            document.getElementById('add-contract-modal').classList.add('hidden');
+        }
+
+        function addContractLine() {
+            const container = document.getElementById('contract-lines-container');
+            const lineId = lineCounter++;
+
+            let revenueAccountOptions = accounts
+                .filter(a => a.account_type === 'revenue')
+                .map(a => `<option value="${a.id}">${a.code} - ${a.name}</option>`) 
+                .join('');
+            if (!revenueAccountOptions) {
+                revenueAccountOptions = '<option value="rev-default">1000 - Revenue</option>';
+            }
+
+            let liabilityAccountOptions = accounts
+                .filter(a => a.account_type === 'liability')
+                .map(a => `<option value="${a.id}">${a.code} - ${a.name}</option>`) 
+                .join('');
+            if (!liabilityAccountOptions) {
+                liabilityAccountOptions = '<option value="defrev-default">2000 - Deferred Revenue</option>';
+            }
+
+            const lineHtml = `
+                <div id="line-${lineId}" data-testid="contract-line-${lineId}" class="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-medium text-gray-700">Line ${lineId + 1}</span>
+                        <button type="button" data-testid="remove-line-${lineId}" onclick="removeContractLine(${lineId})" class="text-red-500 hover:text-red-600 text-sm">Remove</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="col-span-2">
+                            <input type="text" name="line_description_${lineId}" data-testid="line-description-${lineId}" placeholder="Description *" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                Recognition Method
+                                <span class="inline-block relative group cursor-help">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" class="text-gray-400 hover:text-gray-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                                    </svg>
+                                    <span class="invisible group-hover:visible absolute z-20 w-52 p-2 text-xs text-white bg-gray-800 rounded-lg shadow-lg -left-24 top-4">
+                                        <strong>Straight Line:</strong> Revenue recognized evenly over contract period.<br><br>
+                                        <strong>Point in Time:</strong> Revenue recognized at contract start date.
+                                    </span>
+                                </span>
+                            </label>
+                            <select name="line_recognition_${lineId}" data-testid="line-recognition-${lineId}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="straight_line">Straight Line</option>
+                                <option value="point_in_time">Point in Time</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Product Type</label>
+                            <select name="line_product_type_${lineId}" data-testid="line-product-type-${lineId}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="service">Service</option>
+                                <option value="subscription">Subscription</option>
+                                <option value="donation">Donation</option>
+                                <option value="grant">Grant</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Quantity</label>
+                            <input type="number" name="line_quantity_${lineId}" data-testid="line-quantity-${lineId}" value="1" min="0" step="0.01" placeholder="Quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Unit Price *</label>
+                            <input type="number" name="line_unit_price_${lineId}" data-testid="line-unit-price-${lineId}" min="0" step="0.01" placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                SSP Amount *
+                                <span class="inline-block relative group cursor-help">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" class="text-gray-400 hover:text-gray-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                                    </svg>
+                                    <span class="invisible group-hover:visible absolute z-20 w-56 p-2 text-xs text-white bg-gray-800 rounded-lg shadow-lg -left-24 top-4">
+                                        <strong>Standalone Selling Price:</strong> The price at which you would sell this item separately. Used to allocate transaction price proportionally across all contract lines.
+                                    </span>
+                                </span>
+                            </label>
+                            <input type="number" name="line_ssp_${lineId}" data-testid="line-ssp-${lineId}" min="0" step="0.01" placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Revenue Account</label>
+                            <select name="line_revenue_account_${lineId}" data-testid="line-revenue-account-${lineId}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Account</option>
+                                ${revenueAccountOptions}
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-xs text-gray-500 mb-1">Deferred Revenue Account</label>
+                            <select name="line_deferred_account_${lineId}" data-testid="line-deferred-account-${lineId}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Account</option>
+                                ${liabilityAccountOptions}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', lineHtml);
+        }
+
+        function removeContractLine(lineId) {
+            const line = document.getElementById(`line-${lineId}`);
+            if (line) line.remove();
+        }
+
+        async function createContract(event) {
+            event.preventDefault();
+            console.log('[Contracts UI] createContract() start');
+            const form = event.target;
+            const formData = new FormData(form);
+
+            // Resolve org id robustly before any API calls
+            const urlOrgParam = new URLSearchParams(window.location.search).get('organization_id');
+            const resolvedOrgId = (typeof currentOrgId !== 'undefined' && currentOrgId && currentOrgId !== 'null')
+              ? currentOrgId
+              : (urlOrgParam && urlOrgParam !== 'null' ? urlOrgParam : (App.currentOrgId || null));
+            if (!resolvedOrgId) {
+                console.error('[Contracts UI] Missing organization_id context');
+                App.showNotification('Missing organization context. Please select an organization.', 'error');
+                return;
+            }
+            currentOrgId = resolvedOrgId;
+
+            // Collect lines
+            const lines = [];
+            const lineElements = document.querySelectorAll('[id^="line-"]');
+            lineElements.forEach(el => {
+                const id = el.id.replace('line-', '');
+                const description = formData.get(`line_description_${id}`);
+                if (description) {
+                    const rec = formData.get(`line_recognition_${id}`);
+                    const contractStart = formData.get('start_date');
+                    let contractEnd = formData.get('end_date') || null;
+                    if (rec === 'straight_line' && (!contractEnd || contractEnd === '')) {
+                        // Default to 12 months from start if end date omitted
+                        try {
+                            const d = new Date(contractStart);
+                            d.setMonth(d.getMonth() + 12);
+                            contractEnd = d.toISOString().slice(0, 10);
+                        } catch (_) {
+                            contractEnd = null;
+                        }
+                    }
+                    // Resolve default accounts if user didn't choose
+                    const firstRev = (accounts || []).find(a => a.account_type === 'revenue');
+                    const firstDef = (accounts || []).find(a => a.account_type === 'liability');
+                    lines.push({
+                        description,
+                        recognition_pattern: rec,
+                        start_date: contractStart,
+                        end_date: rec === 'straight_line' ? contractEnd : null,
+                        product_type: formData.get(`line_product_type_${id}`),
+                        quantity: (() => { const v = parseFloat(formData.get(`line_quantity_${id}`)); return isNaN(v) ? 1 : v; })(),
+                        unit_price: (() => { const v = parseFloat(formData.get(`line_unit_price_${id}`)); return isNaN(v) ? 0 : Number(v.toFixed(2)); })(),
+                        ssp_amount: (() => { const v = parseFloat(formData.get(`line_ssp_${id}`)); return isNaN(v) ? 0 : Number(v.toFixed(2)); })(),
+                        revenue_account_id: (() => { const v = formData.get(`line_revenue_account_${id}`); return (!v || v.endsWith('-default')) ? (firstRev?.id || null) : v; })(),
+                        deferred_revenue_account_id: (() => { const v = formData.get(`line_deferred_account_${id}`); return (!v || v.endsWith('-default')) ? (firstDef?.id || null) : v; })(),
+                    });
+                }
+            });
+
+            if (lines.length === 0) {
+                console.log('[Contracts UI] No lines; aborting submit');
+                App.showNotification('Please add at least one contract line', 'error');
+                return;
+            }
+
+            // Compute lines total and ensure total_transaction_price matches
+            const linesTotal = lines.reduce((sum, l) => sum + (Number(l.unit_price || 0) * Number(l.quantity || 0)), 0);
+
+            const selectedCustomerId = (document.querySelector('[data-testid="customer-contact"]')?.value) || formData.get('customer_contact_id') || (customers && customers.length > 0 ? customers[customers.length - 1].id : null);
+            const firstCustomer = (customers && customers.length > 0) ? customers.find(c => c.id === selectedCustomerId) || customers[customers.length - 1] : null;
+            const contractData = {
+                organization_id: resolvedOrgId,
+                name: formData.get('name'),
+                customer_contact_id: selectedCustomerId,
+                customer_name: firstCustomer ? `${firstCustomer.first_name || ''} ${firstCustomer.last_name || ''}`.trim() : null,
+                start_date: formData.get('start_date'),
+                end_date: formData.get('end_date') || null,
+                total_transaction_price: (() => {
+                    const inputTotal = parseFloat(formData.get('total_transaction_price'));
+                    if (isNaN(inputTotal) || Math.abs(inputTotal - linesTotal) > 0.005) {
+                        return Number(linesTotal.toFixed(2));
+                    }
+                    return Number(inputTotal.toFixed(2));
+                })(),
+                currency: formData.get('currency') || 'USD',
+                notes: formData.get('notes') || null,
+                lines
+            };
+            console.log('[Contracts UI] Payload:', contractData);
+
+            try {
+                const token = App.pb?.authStore?.token || localStorage.getItem('orgmeet_token');
+                console.log('[Contracts UI] Submitting fetch to /api/v1/finance/contracts?organization_id=' + resolvedOrgId);
+                const response = await fetch(`/api/v1/finance/contracts?organization_id=${resolvedOrgId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(contractData)
+                });
+                console.log('[Contracts UI] Response status:', response.status);
+
+                if (!response.ok) {
+                    let errorDetail = 'Failed to create contract';
+                    try {
+                        const error = await response.json();
+                        errorDetail = error.detail || JSON.stringify(error);
+                    } catch (_) {}
+                    console.error('Create contract failed:', errorDetail, contractData);
+                    try {
+                        const dbg = document.getElementById('debug-log');
+                        if (dbg) {
+                            const pre = document.createElement('pre');
+                            pre.textContent = `[Contracts UI] Error: ${errorDetail}`;
+                            dbg.appendChild(pre);
+                        }
+                    } catch (_) {}
+                    throw new Error(errorDetail);
+                }
+
+                console.log('[Contracts UI] Contract created successfully');
+                App.showNotification('Contract created successfully!', 'success');
+                hideAddContractModal();
+                await loadContracts();
+            } catch (err) {
+                console.error('Failed to create contract:', err);
+                App.showNotification(err.message, 'error');
+            }
+        }
+
+        // Explicit click log for debugging
+        document.addEventListener('click', (e) => {
+            const t = e.target.closest('[data-testid="contract-submit"]');
+            if (t) {
+                console.log('[Contracts UI] Submit clicked');
+            }
+        });
+
+        async function activateContract(contractId) {
+            if (!confirm('Activate this contract? This will allocate the transaction price and generate revenue schedules.')) return;
+
+            try {
+                const token = App.pb?.authStore?.token || localStorage.getItem('orgmeet_token');
+                const response = await fetch(`/api/v1/finance/contracts/${contractId}/activate?organization_id=${currentOrgId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ generate_schedules: true })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to activate contract');
+                }
+
+                const result = await response.json();
+                App.showNotification(result.message, 'success');
+                await loadContracts();
+            } catch (err) {
+                console.error('Failed to activate contract:', err);
+                App.showNotification(err.message, 'error');
+            }
+        }
+
+        function viewContract(contractId) {
+            // For now, show a notification. In future, could navigate to detail page
+            App.showNotification('Contract detail view coming soon!', 'info');
+        }
+
+        async function deleteContract(contractId) {
+            if (!confirm('Delete this contract? This action cannot be undone.')) return;
+
+            try {
+                const token = App.pb?.authStore?.token || localStorage.getItem('orgmeet_token');
+                const response = await fetch(`/api/v1/finance/contracts/${contractId}?organization_id=${currentOrgId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to delete contract');
+                }
+
+                App.showNotification('Contract deleted', 'success');
+                await loadContracts();
+            } catch (err) {
+                console.error('Failed to delete contract:', err);
+                App.showNotification(err.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

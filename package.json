@@ -1,0 +1,18 @@
+{
+  "name": "orgmeet",
+  "version": "1.0.0",
+  "description": "**OrgMeet** is an open-source meeting governance and video conferencing platform that combines structured meeting management (inspired by OpenSlides) with real-time video conferencing (via Jitsi Meet).",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:report": "npx playwright show-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}

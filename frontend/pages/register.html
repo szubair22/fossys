@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - OrgMeet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>OrgMeet</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-10 w-full max-w-md">
+            <!-- Invite Banner (shown when invite token present) -->
+            <div id="invite-banner" class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-amber-600">
+                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-amber-800">You've been invited!</p>
+                        <p class="text-sm text-amber-700" id="invite-org-name">Create an account to join the organization</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" class="text-green-600">
+                        <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Create account</h1>
+                <p class="text-gray-500">Get started with OrgMeet for free</p>
+            </div>
+
+            <div id="error-message" class="hidden bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-sm border border-red-100 flex items-center gap-3">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="flex-shrink-0">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <span id="error-text"></span>
+            </div>
+
+            <form id="register-form" class="space-y-5" onsubmit="return false;">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="name">Full Name</label>
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="John Doe"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="email">Email address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="you@example.com"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="At least 8 characters"
+                        minlength="8"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="passwordConfirm">Confirm Password</label>
+                    <input
+                        type="password"
+                        id="passwordConfirm"
+                        name="passwordConfirm"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Confirm your password"
+                        required
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    id="submit-btn"
+                    class="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                >
+                    <span>Create Account</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+                    </svg>
+                </button>
+            </form>
+
+            <div class="mt-8 pt-6 border-t border-gray-100 text-center">
+                <p class="text-gray-500 text-sm">
+                    Already have an account?
+                    <a href="/pages/login.html" class="text-blue-600 font-medium hover:text-blue-700 hover:underline">Sign in</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgMeet. Open-source meeting governance platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        let inviteToken = null;
+        let inviteInfo = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+
+            // Check for invite token in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            inviteToken = urlParams.get('invite');
+
+            if (inviteToken) {
+                await loadInviteInfo();
+            }
+
+            // Redirect if already logged in
+            if (API.auth.isLoggedIn()) {
+                // If there's an invite token, accept it first
+                if (inviteToken) {
+                    await acceptInviteAndRedirect();
+                } else {
+                    window.location.href = '/pages/dashboard.html';
+                }
+                return;
+            }
+
+            const form = document.getElementById('register-form');
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const submitBtn = document.getElementById('submit-btn');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const passwordConfirm = document.getElementById('passwordConfirm').value;
+
+                if (password !== passwordConfirm) {
+                    errorText.textContent = 'Passwords do not match';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                    </svg>
+                    <span>Creating account...</span>
+                `;
+                errorDiv.classList.add('hidden');
+
+                try {
+                    // API.auth.register handles both creation and auto-login
+                    await API.auth.register(name, email, password, passwordConfirm);
+
+                    // If there's an invite token, accept it
+                    if (inviteToken) {
+                        await acceptInviteAndRedirect();
+                    } else {
+                        window.location.href = '/pages/dashboard.html';
+                    }
+                } catch (err) {
+                    // Log full error for debugging
+                    console.error('Registration failed:', err);
+                    if (err.data) console.error('Error data:', err.data);
+                    errorText.textContent = err.message || 'Failed to create account';
+                    errorDiv.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `
+                        <span>Create Account</span>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+                        </svg>
+                    `;
+                }
+            });
+        });
+
+        async function loadInviteInfo() {
+            try {
+                const response = await fetch(`/api/v1/governance/org-invites/by-token/${inviteToken}`);
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Invalid invitation');
+                }
+                inviteInfo = await response.json();
+
+                // Show invite banner
+                document.getElementById('invite-banner').classList.remove('hidden');
+                document.getElementById('invite-org-name').textContent =
+                    `Create an account to join ${inviteInfo.organization_name || 'the organization'} as a ${inviteInfo.role}`;
+
+                // Pre-fill email if available
+                if (inviteInfo.email) {
+                    document.getElementById('email').value = inviteInfo.email;
+                }
+            } catch (err) {
+                console.error('Failed to load invite info:', err);
+                UI.showError(err.message || 'This invitation is invalid or has expired');
+            }
+        }
+
+        async function acceptInviteAndRedirect() {
+            try {
+                const result = await API.orgInvites.accept(inviteToken);
+                UI.showSuccess(result.message || 'Successfully joined the organization!');
+
+                // Set the org as current
+                if (result.organization_id) {
+                    API.org.setCurrentId(result.organization_id);
+                }
+
+                // Redirect to dashboard
+                window.location.href = '/pages/dashboard.html';
+            } catch (err) {
+                console.error('Failed to accept invite:', err);
+                UI.showError(err.message || 'Failed to accept invitation');
+                // Still redirect to dashboard
+                window.location.href = '/pages/dashboard.html';
+            }
+        }
+    </script>
+</body>
+</html>

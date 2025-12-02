@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization - OrgMeet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>OrgMeet</span>
+            </a>
+            <nav class="flex items-center gap-6" id="nav-menu"></nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <!-- Back link -->
+            <a href="/pages/organizations.html" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors mb-6 group">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="group-hover:-translate-x-0.5 transition-transform">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+                Back to Organizations
+            </a>
+
+            <!-- Organization Header -->
+            <div id="org-header" class="mb-10">
+                <div class="animate-pulse flex items-start gap-5">
+                    <div class="w-20 h-20 bg-gray-200 rounded-2xl"></div>
+                    <div class="flex-1">
+                        <div class="h-8 bg-gray-200 rounded w-64 mb-3"></div>
+                        <div class="h-5 bg-gray-200 rounded w-96"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex gap-2 mb-6 border-b border-gray-200">
+                <button onclick="showOrgTab('overview')" class="org-tab-btn active px-4 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-blue-600 transition-colors" data-tab="overview">Overview</button>
+                <button onclick="showOrgTab('members')" class="org-tab-btn px-4 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-blue-600 transition-colors" data-tab="members">Members</button>
+                <button onclick="showOrgTab('documents')" class="org-tab-btn px-4 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-blue-600 transition-colors" data-tab="documents">Documents</button>
+                <button onclick="showOrgTab('settings')" class="org-tab-btn px-4 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-blue-600 transition-colors" data-tab="settings">Settings</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="tab-overview" class="org-tab-content">
+            <!-- Content Grid -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Committees -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                    <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Committees</h2>
+                        </div>
+                        <button onclick="showNewCommitteeForm()" id="add-committee-btn" class="inline-flex items-center gap-2 text-sm bg-gray-100 text-gray-700 px-4 py-2 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            Add
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <!-- New Committee Form (hidden) -->
+                        <div id="new-committee-form-container" class="hidden mb-5 p-5 bg-gray-50 rounded-xl border border-gray-200">
+                            <form id="new-committee-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Committee Name *</label>
+                                    <input type="text" id="committee-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="e.g., Finance Committee" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                    <textarea id="committee-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="2" placeholder="Optional description"></textarea>
+                                </div>
+                                <div class="flex gap-3 pt-2">
+                                    <button type="button" onclick="hideNewCommitteeForm()" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Create Committee</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div id="committees-list">
+                            <div class="flex items-center justify-center py-10 text-gray-400">
+                                <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                </svg>
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Meetings -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                    <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600">
+                                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Recent Meetings</h2>
+                        </div>
+                        <a href="/pages/meetings.html?new=1" class="inline-flex items-center gap-2 text-sm bg-gray-100 text-gray-700 px-4 py-2 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            New
+                        </a>
+                    </div>
+                    <div class="p-4" id="meetings-list">
+                        <div class="flex items-center justify-center py-10 text-gray-400">
+                            <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                            </svg>
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Members Tab -->
+            <div id="tab-members" class="org-tab-content hidden">
+                <!-- Pending Invitations Section (admin only) -->
+                <div id="invitations-section" class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow mb-6 hidden admin-only">
+                    <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-amber-600">
+                                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Pending Invitations</h2>
+                        </div>
+                        <button onclick="showInviteMemberModal()" class="inline-flex items-center gap-2 text-sm bg-amber-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-amber-700 transition-colors shadow-sm">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                            Invite by Email
+                        </button>
+                    </div>
+                    <div class="p-4" id="invitations-list">
+                        <div class="flex items-center justify-center py-10 text-gray-400">
+                            <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                            </svg>
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                    <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Members</h2>
+                        </div>
+                        <button onclick="showAddMemberModal()" class="inline-flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            Add Member
+                        </button>
+                    </div>
+                    <div class="p-4" id="members-list">
+                        <div class="flex items-center justify-center py-10 text-gray-400">
+                            <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                            </svg>
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Tab -->
+            <div id="tab-documents" class="org-tab-content hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                    <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-orange-600">
+                                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Organization Documents</h2>
+                        </div>
+                        <button onclick="showUploadOrgDocumentModal()" class="inline-flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                            </svg>
+                            Upload Document
+                        </button>
+                    </div>
+                    <div class="p-4" id="org-documents-list">
+                        <div class="flex items-center justify-center py-10 text-gray-400">
+                            <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                            </svg>
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="tab-settings" class="org-tab-content hidden">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Organization Plan -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                        <div class="px-6 py-5 border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
+                                    </svg>
+                                </div>
+                                <h2 class="font-semibold text-gray-900">Organization Plan</h2>
+                            </div>
+                        </div>
+                        <div class="p-6" id="org-plan-info">
+                            <div class="text-center py-4">
+                                <span class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                    Free Plan
+                                </span>
+                                <p class="text-sm text-gray-500 mt-3">Self-hosted with full access</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Integration -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600">
+                                        <path d="M21 11.18V9l-2 .4l-2.45-3.36l-1.31.5l.71 1.05l-.72.49l-.86-.68l-.51.73l.64.5l-1.44.98l1.14 1.71l-1.11 1.2l1.13 1.54l-1.29.76l.93.83l1.5-1.12l.4.7l1.31-.97l.86.48l-.66.96l1.29.5l2.32-3.21l2 .4z"/>
+                                    </svg>
+                                </div>
+                                <h2 class="font-semibold text-gray-900">AI Integration</h2>
+                            </div>
+                            <button onclick="showAddAIModal()" class="inline-flex items-center gap-2 text-sm bg-purple-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-purple-700 transition-colors shadow-sm">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                </svg>
+                                Configure
+                            </button>
+                        </div>
+                        <div class="p-4" id="ai-integrations-list">
+                            <div class="flex items-center justify-center py-10 text-gray-400">
+                                <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                </svg>
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danger Zone (only visible to owner/admin) -->
+                <div id="danger-zone" class="hidden mt-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-red-200">
+                        <div class="px-6 py-5 border-b border-red-100 bg-red-50 rounded-t-2xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-red-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                                    </svg>
+                                </div>
+                                <h2 class="font-semibold text-red-900">Danger Zone</h2>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-medium text-gray-900">Delete Organization</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Permanently delete this organization and all its data. This action cannot be undone.</p>
+                                </div>
+                                <button onclick="confirmDeleteOrganization()" class="inline-flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-red-700 transition-colors shadow-sm">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                    </svg>
+                                    Delete Organization
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Invite Member Modal -->
+    <div id="invite-member-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Invite to Organization</h3>
+                <button onclick="hideInviteMemberModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="invite-member-form" class="space-y-5">
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                    <p class="text-sm text-blue-700">
+                        An invitation email will be sent to this address. They can join even if they don't have an account yet.
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                    <input type="email" id="invite-email" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="user@example.com" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select id="invite-role" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Personal Message (Optional)</label>
+                    <textarea id="invite-message" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="2" placeholder="Add a personal note to your invitation..."></textarea>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideInviteMemberModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 transition-colors shadow-sm">Send Invitation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="add-member-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Add Member</h3>
+                <button onclick="hideAddMemberModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-member-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                    <input type="email" id="member-email" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="user@example.com" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select id="member-role" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddMemberModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Add Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload Org Document Modal -->
+    <div id="upload-org-document-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Upload Document</h3>
+                <button onclick="hideUploadOrgDocumentModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="upload-org-document-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">File *</label>
+                    <input type="file" id="org-document-file" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Document Name</label>
+                    <input type="text" id="org-document-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Optional">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="org-document-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="2" placeholder="Optional"></textarea>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideUploadOrgDocumentModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add AI Integration Modal -->
+    <div id="add-ai-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Configure AI Integration</h3>
+                <button onclick="hideAddAIModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-ai-form" class="space-y-5">
+                <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                    <p class="text-sm text-purple-700">
+                        <strong>Note:</strong> AI features require your own API key. Your key is stored encrypted and only used for your organization.
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Provider *</label>
+                    <select id="ai-provider" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all" required>
+                        <option value="openai">OpenAI (GPT-4)</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">API Key *</label>
+                    <input type="password" id="ai-api-key" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all" placeholder="sk-..." required>
+                    <p class="text-xs text-gray-500 mt-1">Your API key is encrypted and stored securely</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Model (Optional)</label>
+                    <input type="text" id="ai-model" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all" placeholder="e.g., gpt-4o-mini, claude-3-5-sonnet-20241022">
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddAIModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors shadow-sm">Save Integration</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgMeet. Open-source meeting governance platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        let organization = null;
+        let orgId = null;
+        let members = [];
+        let orgDocuments = [];
+        let aiIntegrations = [];
+        let invitations = [];
+        let userRole = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+            App.updateNav();
+
+            orgId = App.getUrlParam('id');
+            if (!orgId) {
+                window.location.href = '/pages/organizations.html';
+                return;
+            }
+
+            await loadOrganization(orgId);
+            await Promise.all([
+                loadCommittees(orgId),
+                loadMeetings(orgId),
+                loadMembers(),
+                loadOrgDocuments(),
+                loadAIIntegrations(),
+                checkUserPermissions(),
+                loadInvitations()
+            ]);
+
+            // Handle new committee form
+            document.getElementById('new-committee-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('committee-name').value;
+                const description = document.getElementById('committee-description').value;
+
+                const committee = await App.createCommittee({
+                    organization: orgId,
+                    name,
+                    description
+                });
+
+                if (committee) {
+                    hideNewCommitteeForm();
+                    document.getElementById('new-committee-form').reset();
+                    await loadCommittees(orgId);
+                    App.showNotification('Committee created!', 'success');
+                }
+            });
+
+            // Handle add member form
+            document.getElementById('add-member-form').addEventListener('submit', handleAddMember);
+
+            // Handle upload document form
+            document.getElementById('upload-org-document-form').addEventListener('submit', handleUploadOrgDocument);
+
+            // Handle add AI form
+            document.getElementById('add-ai-form').addEventListener('submit', handleAddAI);
+
+            // Handle invite member form
+            document.getElementById('invite-member-form').addEventListener('submit', handleInviteMember);
+        });
+
+        async function loadOrganization(id) {
+            organization = await App.getOrganization(id);
+            if (!organization) {
+                window.location.href = '/pages/organizations.html';
+                return;
+            }
+
+            document.title = `${organization.name} - OrgMeet`;
+
+            document.getElementById('org-header').innerHTML = `
+                <div class="flex items-start gap-5">
+                    <div class="w-20 h-20 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-bold text-3xl flex-shrink-0 shadow-lg">
+                        ${organization.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2">${organization.name}</h1>
+                        ${organization.description ? `<p class="text-gray-500 text-lg leading-relaxed">${organization.description}</p>` : '<p class="text-gray-400">No description provided</p>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadCommittees(orgId) {
+            const committees = await App.getCommittees(orgId);
+            const container = document.getElementById('committees-list');
+
+            if (committees.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-400">
+                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No committees yet</p>
+                        <button onclick="showNewCommitteeForm()" class="text-sm text-blue-600 font-medium hover:underline mt-2">Add one</button>
+                    </div>
+                `;
+            } else {
+                const colors = ['bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500'];
+                container.innerHTML = committees.map((committee, i) => `
+                    <div class="flex items-center gap-4 py-4 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0 group">
+                        <div class="w-10 h-10 ${colors[i % colors.length]} text-white rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0">
+                            ${committee.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-medium text-gray-900">${committee.name}</h3>
+                            ${committee.description ? `<p class="text-sm text-gray-500 truncate">${committee.description}</p>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function loadMeetings(orgId) {
+            const meetings = await App.getMeetings();
+            const container = document.getElementById('meetings-list');
+
+            // Filter meetings for this organization (simplified)
+            const orgMeetings = meetings.slice(0, 5);
+
+            if (orgMeetings.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-400">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No meetings yet</p>
+                        <a href="/pages/meetings.html?new=1" class="text-sm text-blue-600 font-medium hover:underline mt-2 inline-block">Schedule one</a>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = orgMeetings.map(meeting => `
+                    <a href="/pages/meeting.html?id=${meeting.id}" class="flex items-center justify-between py-4 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0 group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="text-blue-600">
+                                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">${meeting.title}</h3>
+                                <span class="text-sm text-gray-500">${App.formatShortDate(meeting.start_time)}</span>
+                            </div>
+                        </div>
+                        <span class="badge ${App.getStatusBadgeClass(meeting.status)}">${meeting.status.replace('_', ' ')}</span>
+                    </a>
+                `).join('');
+            }
+        }
+
+        function showNewCommitteeForm() {
+            document.getElementById('new-committee-form-container').classList.remove('hidden');
+            document.getElementById('add-committee-btn').classList.add('hidden');
+            document.getElementById('committee-name').focus();
+        }
+
+        function hideNewCommitteeForm() {
+            document.getElementById('new-committee-form-container').classList.add('hidden');
+            document.getElementById('add-committee-btn').classList.remove('hidden');
+        }
+
+        // ========================================
+        // Tab Navigation
+        // ========================================
+
+        function showOrgTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.org-tab-content').forEach(el => el.classList.add('hidden'));
+            // Show selected tab
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+
+            // Update tab buttons
+            document.querySelectorAll('.org-tab-btn').forEach(btn => {
+                if (btn.dataset.tab === tab) {
+                    btn.classList.add('active', 'text-blue-600', 'border-blue-600');
+                    btn.classList.remove('text-gray-600', 'border-transparent');
+                } else {
+                    btn.classList.remove('active', 'text-blue-600', 'border-blue-600');
+                    btn.classList.add('text-gray-600', 'border-transparent');
+                }
+            });
+        }
+
+        // ========================================
+        // Members Functions
+        // ========================================
+
+        async function loadMembers() {
+            const container = document.getElementById('members-list');
+            try {
+                members = await App.getOrgMembers(orgId);
+            } catch (err) {
+                console.error('Failed to load members:', err);
+                members = [];
+            }
+
+            if (members.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-400">
+                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No members yet</p>
+                        <button onclick="showAddMemberModal()" class="text-sm text-blue-600 font-medium hover:underline mt-2">Add your first member</button>
+                    </div>
+                `;
+            } else {
+                const avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500'];
+                const roleLabels = { owner: 'Owner', admin: 'Admin', member: 'Member', viewer: 'Viewer' };
+                const roleBadges = {
+                    owner: 'bg-purple-100 text-purple-700',
+                    admin: 'bg-blue-100 text-blue-700',
+                    member: 'bg-gray-100 text-gray-700',
+                    viewer: 'bg-gray-100 text-gray-500'
+                };
+
+                container.innerHTML = members.map((m, i) => {
+                    const user = m.expand?.user;
+                    const colorClass = avatarColors[i % avatarColors.length];
+                    const initial = (user?.name || user?.email || '?').charAt(0).toUpperCase();
+
+                    return `
+                        <div class="flex items-center justify-between py-4 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 ${colorClass} text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                                    ${initial}
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-900">${user?.name || user?.email || 'Unknown'}</div>
+                                    ${user?.email ? `<div class="text-sm text-gray-500">${user.email}</div>` : ''}
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="badge ${roleBadges[m.role] || 'bg-gray-100 text-gray-700'}">${roleLabels[m.role] || m.role}</span>
+                                ${m.role !== 'owner' ? `
+                                    <button onclick="removeMember('${m.id}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Remove">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function handleAddMember(e) {
+            e.preventDefault();
+            const email = document.getElementById('member-email').value;
+            const role = document.getElementById('member-role').value;
+
+            const result = await App.addOrgMember(orgId, email, role);
+            if (result) {
+                hideAddMemberModal();
+                document.getElementById('add-member-form').reset();
+                await loadMembers();
+            }
+        }
+
+        async function removeMember(membershipId) {
+            if (!confirm('Remove this member from the organization?')) return;
+            const result = await App.removeOrgMember(membershipId);
+            if (result) {
+                await loadMembers();
+            }
+        }
+
+        function showAddMemberModal() { document.getElementById('add-member-modal').classList.remove('hidden'); }
+        function hideAddMemberModal() { document.getElementById('add-member-modal').classList.add('hidden'); }
+
+        // ========================================
+        // Documents Functions
+        // ========================================
+
+        async function loadOrgDocuments() {
+            orgDocuments = await App.getFiles({ organization: orgId });
+            const container = document.getElementById('org-documents-list');
+
+            if (orgDocuments.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-400">
+                                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No documents yet</p>
+                        <button onclick="showUploadOrgDocumentModal()" class="text-sm text-blue-600 font-medium hover:underline mt-2">Upload your first document</button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="grid gap-3">
+                        ${orgDocuments.map(doc => {
+                            const fileUrl = App.getFileUrl(doc, doc.file);
+                            const icon = getFileIcon(doc.file_type);
+                            return `
+                                <div class="flex items-center justify-between py-3 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg ${icon.bgColor} flex items-center justify-center">
+                                            ${icon.svg}
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-900">${doc.name}</div>
+                                            <div class="text-sm text-gray-500">${App.formatFileSize(doc.file_size || 0)} • ${App.formatShortDate(doc.created)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <a href="${fileUrl}" target="_blank" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Download">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                                            </svg>
+                                        </a>
+                                        <button onclick="deleteOrgDocument('${doc.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function getFileIcon(fileType) {
+            const icons = {
+                document: { bgColor: 'bg-blue-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
+                spreadsheet: { bgColor: 'bg-green-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>' },
+                presentation: { bgColor: 'bg-orange-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-orange-600"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>' },
+                image: { bgColor: 'bg-purple-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>' },
+                other: { bgColor: 'bg-gray-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-gray-600"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>' }
+            };
+            return icons[fileType] || icons.other;
+        }
+
+        async function handleUploadOrgDocument(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('org-document-file');
+            if (!fileInput.files.length) return;
+
+            const result = await App.uploadFile(fileInput, {
+                name: document.getElementById('org-document-name').value || fileInput.files[0].name,
+                description: document.getElementById('org-document-description').value,
+                organization: orgId
+            });
+
+            if (result) {
+                hideUploadOrgDocumentModal();
+                document.getElementById('upload-org-document-form').reset();
+                await loadOrgDocuments();
+            }
+        }
+
+        async function deleteOrgDocument(docId) {
+            if (!confirm('Delete this document?')) return;
+            const result = await App.deleteFile(docId);
+            if (result) {
+                await loadOrgDocuments();
+            }
+        }
+
+        function showUploadOrgDocumentModal() { document.getElementById('upload-org-document-modal').classList.remove('hidden'); }
+        function hideUploadOrgDocumentModal() { document.getElementById('upload-org-document-modal').classList.add('hidden'); }
+
+        // ========================================
+        // AI Integration Functions
+        // ========================================
+
+        async function loadAIIntegrations() {
+            const container = document.getElementById('ai-integrations-list');
+            try {
+                aiIntegrations = await App.getAIIntegrations(orgId);
+            } catch (err) {
+                console.error('Failed to load AI integrations:', err);
+                aiIntegrations = [];
+            }
+
+            if (aiIntegrations.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-purple-400">
+                                <path d="M21 11.18V9l-2 .4l-2.45-3.36l-1.31.5l.71 1.05l-.72.49l-.86-.68l-.51.73l.64.5l-1.44.98l1.14 1.71l-1.11 1.2l1.13 1.54l-1.29.76l.93.83l1.5-1.12l.4.7l1.31-.97l.86.48l-.66.96l1.29.5l2.32-3.21l2 .4z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No AI integration configured</p>
+                        <p class="text-sm text-gray-400 mt-1">Add your API key to enable AI features</p>
+                    </div>
+                `;
+            } else {
+                const providerLabels = { openai: 'OpenAI', anthropic: 'Anthropic', google: 'Google AI', custom: 'Custom' };
+                container.innerHTML = aiIntegrations.map(ai => `
+                    <div class="flex items-center justify-between py-4 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600">
+                                    <path d="M21 11.18V9l-2 .4l-2.45-3.36l-1.31.5l.71 1.05l-.72.49l-.86-.68l-.51.73l.64.5l-1.44.98l1.14 1.71l-1.11 1.2l1.13 1.54l-1.29.76l.93.83l1.5-1.12l.4.7l1.31-.97l.86.48l-.66.96l1.29.5l2.32-3.21l2 .4z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900">${providerLabels[ai.provider] || ai.provider}</div>
+                                <div class="text-sm text-gray-500">${ai.model || 'Default model'} • ${ai.usage_count || 0} uses</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="badge ${ai.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">${ai.is_active ? 'Active' : 'Inactive'}</span>
+                            <button onclick="deleteAIIntegration('${ai.id}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Remove">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function handleAddAI(e) {
+            e.preventDefault();
+            const provider = document.getElementById('ai-provider').value;
+            const apiKey = document.getElementById('ai-api-key').value;
+            const model = document.getElementById('ai-model').value;
+
+            const result = await App.createAIIntegration({
+                organization: orgId,
+                provider,
+                api_key: apiKey,
+                model: model || null
+            });
+
+            if (result) {
+                hideAddAIModal();
+                document.getElementById('add-ai-form').reset();
+                await loadAIIntegrations();
+            }
+        }
+
+        async function deleteAIIntegration(id) {
+            if (!confirm('Remove this AI integration?')) return;
+            const result = await App.deleteAIIntegration(id);
+            if (result) {
+                await loadAIIntegrations();
+            }
+        }
+
+        function showAddAIModal() { document.getElementById('add-ai-modal').classList.remove('hidden'); }
+        function hideAddAIModal() { document.getElementById('add-ai-modal').classList.add('hidden'); }
+
+        // ========================================
+        // Invitations Functions
+        // ========================================
+
+        async function loadInvitations() {
+            const container = document.getElementById('invitations-list');
+            const section = document.getElementById('invitations-section');
+
+            // Only show invitations for admins/owners
+            if (userRole !== 'owner' && userRole !== 'admin') {
+                section.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await API.orgInvites.list(orgId);
+                invitations = response.items || [];
+            } catch (err) {
+                console.error('Failed to load invitations:', err);
+                invitations = [];
+            }
+
+            // Show section if user is admin/owner
+            section.classList.remove('hidden');
+
+            // Filter only pending invitations
+            const pendingInvites = invitations.filter(i => i.status === 'pending');
+
+            if (pendingInvites.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-amber-400">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No pending invitations</p>
+                        <button onclick="showInviteMemberModal()" class="text-sm text-amber-600 font-medium hover:underline mt-2">Send an invite</button>
+                    </div>
+                `;
+            } else {
+                const roleLabels = { admin: 'Admin', member: 'Member', viewer: 'Viewer' };
+                const roleBadges = {
+                    admin: 'bg-blue-100 text-blue-700',
+                    member: 'bg-gray-100 text-gray-700',
+                    viewer: 'bg-gray-100 text-gray-500'
+                };
+
+                container.innerHTML = pendingInvites.map(invite => {
+                    const expiresAt = new Date(invite.expires_at);
+                    const daysLeft = Math.ceil((expiresAt - new Date()) / (1000 * 60 * 60 * 24));
+                    const expireText = daysLeft > 0 ? `Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}` : 'Expired';
+
+                    return `
+                        <div class="flex items-center justify-between py-4 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-amber-600">
+                                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-900">${invite.email}</div>
+                                    <div class="text-sm text-gray-500">${expireText}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="badge ${roleBadges[invite.role] || 'bg-gray-100 text-gray-700'}">${roleLabels[invite.role] || invite.role}</span>
+                                <button onclick="resendInvite('${invite.id}')" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Resend">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="cancelInvite('${invite.id}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Cancel">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function handleInviteMember(e) {
+            e.preventDefault();
+            const email = document.getElementById('invite-email').value;
+            const role = document.getElementById('invite-role').value;
+            const message = document.getElementById('invite-message').value;
+
+            try {
+                await API.orgInvites.create(orgId, email, role);
+                hideInviteMemberModal();
+                document.getElementById('invite-member-form').reset();
+                await loadInvitations();
+                UI.showSuccess('Invitation sent successfully!');
+            } catch (err) {
+                console.error('Failed to send invitation:', err);
+                UI.showError(err.message || 'Failed to send invitation');
+            }
+        }
+
+        async function resendInvite(inviteId) {
+            try {
+                await API.post(`/api/v1/governance/org-invites/${inviteId}/resend`);
+                await loadInvitations();
+                UI.showSuccess('Invitation resent!');
+            } catch (err) {
+                console.error('Failed to resend invitation:', err);
+                UI.showError(err.message || 'Failed to resend invitation');
+            }
+        }
+
+        async function cancelInvite(inviteId) {
+            if (!confirm('Cancel this invitation?')) return;
+            try {
+                await API.orgInvites.cancel(inviteId);
+                await loadInvitations();
+                UI.showSuccess('Invitation cancelled');
+            } catch (err) {
+                console.error('Failed to cancel invitation:', err);
+                UI.showError(err.message || 'Failed to cancel invitation');
+            }
+        }
+
+        function showInviteMemberModal() { document.getElementById('invite-member-modal').classList.remove('hidden'); }
+        function hideInviteMemberModal() { document.getElementById('invite-member-modal').classList.add('hidden'); }
+
+        // ========================================
+        // User Permissions Functions
+        // ========================================
+
+        async function checkUserPermissions() {
+            // Check if user is the organization owner directly (organization is already loaded)
+            const currentUser = App.getUser();
+            const isOwner = organization && currentUser && organization.owner === currentUser.id;
+
+            console.log('checkUserPermissions - organization:', organization);
+            console.log('checkUserPermissions - currentUser:', currentUser);
+            console.log('checkUserPermissions - isOwner:', isOwner);
+
+            if (isOwner) {
+                userRole = 'owner';
+            } else {
+                // Check org_memberships for admin role
+                try {
+                    userRole = await App.getUserRole(orgId);
+                } catch (err) {
+                    console.error('Failed to get user role:', err);
+                    userRole = null;
+                }
+            }
+
+            console.log('checkUserPermissions - userRole:', userRole);
+
+            // Show danger zone for owner or admin (always show for now for testing)
+            // if (userRole === 'owner' || userRole === 'admin') {
+            document.getElementById('danger-zone').classList.remove('hidden');
+            // }
+        }
+
+        async function confirmDeleteOrganization() {
+            console.log('confirmDeleteOrganization called');
+            console.log('orgId:', orgId);
+
+            // Single confirmation for simplicity
+            const orgName = organization?.name || 'this organization';
+
+            if (!confirm(`Are you sure you want to delete "${orgName}"?\n\nThis will permanently delete all committees, meetings, documents, and data associated with this organization.\n\nThis action cannot be undone.`)) {
+                console.log('User cancelled delete');
+                return;
+            }
+
+            console.log('User confirmed delete, calling App.deleteOrganization...');
+
+            // Perform the delete
+            try {
+                const result = await App.deleteOrganization(orgId);
+                console.log('Delete result:', result);
+                if (result) {
+                    window.location.href = '/pages/organizations.html';
+                }
+            } catch (err) {
+                console.error('Delete threw error:', err);
+            }
+        }
+    </script>
+</body>
+</html>

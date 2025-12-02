@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacts - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <script src="/js/layout.js?v=2"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="app-shell" hx-ext="json-enc">
+    <!-- Shared Header (rendered by Layout.js) -->
+    <header class="app-header"></header>
+
+    <!-- Module Navigation -->
+    <nav class="module-nav"></nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <div class="app-main-inner">
+            <!-- Hidden org selector for test compatibility -->
+            <select id="org-selector" data-testid="org-selector" class="hidden" onchange="loadContacts()">
+                <option value="">Loading organizations...</option>
+            </select>
+
+            <!-- Page Header -->
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Contacts</h1>
+                    <p class="text-gray-500 mt-2">Manage donors, vendors, sponsors, and partners</p>
+                </div>
+                <button onclick="showAddContactModal()" class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md" data-require-role="member" data-testid="add-contact-btn" id="add-contact-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Add Contact
+                </button>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                <div class="flex flex-wrap gap-4 items-center">
+                    <!-- Contact Type Filter -->
+                    <div class="flex gap-2">
+                        <button class="filter-btn active" data-type="" onclick="setTypeFilter(this, '')">All</button>
+                        <button class="filter-btn" data-type="donor" onclick="setTypeFilter(this, 'donor')">Donors</button>
+                        <button class="filter-btn" data-type="vendor" onclick="setTypeFilter(this, 'vendor')">Vendors</button>
+                        <button class="filter-btn" data-type="sponsor" onclick="setTypeFilter(this, 'sponsor')">Sponsors</button>
+                        <button class="filter-btn" data-type="partner" onclick="setTypeFilter(this, 'partner')">Partners</button>
+                        <button class="filter-btn" data-type="grant_maker" onclick="setTypeFilter(this, 'grant_maker')">Grant Makers</button>
+                    </div>
+                    <!-- Search -->
+                    <div class="flex-1 min-w-[200px]">
+                        <input type="text" id="contact-search" placeholder="Search by name, email, or company..."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               oninput="debounceSearch()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacts Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Name / Company</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Email</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Type</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Phone</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Created</th>
+                            <th class="text-right px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contacts-table-body">
+                        <tr>
+                            <td colspan="6" class="text-center py-16">
+                                <div class="inline-flex items-center gap-3 text-gray-400">
+                                    <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                    </svg>
+                                    <span>Select an organization to view contacts</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="flex justify-between items-center mt-6 hidden">
+                <div class="text-sm text-gray-500">
+                    Showing <span id="showing-start">0</span>-<span id="showing-end">0</span> of <span id="total-items">0</span> contacts
+                </div>
+                <div class="flex gap-2">
+                    <button id="prev-page" onclick="changePage(-1)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Previous</button>
+                    <button id="next-page" onclick="changePage(1)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Contact Modal -->
+    <div id="add-contact-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-lg">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Add New Contact</h2>
+                <button onclick="hideAddContactModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="add-contact-form" class="space-y-5" onsubmit="submitContactForm(event)">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input type="text" name="first_name" id="contact-first-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <input type="text" name="last_name" id="contact-last-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Company / Organization</label>
+                    <input type="text" name="company_name" id="contact-company" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" name="email" id="contact-email" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input type="tel" name="phone" id="contact-phone" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Type *</label>
+                        <select name="contact_type" id="contact-type" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="donor">Donor</option>
+                            <option value="vendor">Vendor</option>
+                            <option value="sponsor">Sponsor</option>
+                            <option value="partner">Partner</option>
+                            <option value="grant_maker">Grant Maker</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <textarea name="address" id="contact-address" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <textarea name="notes" id="contact-notes" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2"></textarea>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddContactModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" id="submit-contact-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Add Contact
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+    </footer>
+
+    <script>
+        let currentPage = 1;
+        let currentType = '';
+        let currentSearch = '';
+        let searchTimeout = null;
+        const perPage = 30;
+
+        // Add auth header to all HTMX requests
+        document.body.addEventListener('htmx:configRequest', function(event) {
+            const token = App.pb?.authStore?.token;
+            if (token) {
+                event.detail.headers['Authorization'] = `Bearer ${token}`;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+
+            // Initialize Layout with membership module
+            Layout.init({ module: 'membership' });
+            Layout.renderModuleNav('membership', 'contacts');
+
+            await loadOrganizations();
+
+            // Listen for org changes from Layout
+            window.addEventListener('orgchange', async (e) => {
+                document.getElementById('org-selector').value = e.detail.orgId;
+                loadContacts();
+            });
+
+            // Apply role-based UI visibility
+            const orgId = document.getElementById('org-selector')?.value;
+            if (orgId && typeof UI !== 'undefined' && UI.initRoleBasedUI) {
+                await UI.initRoleBasedUI(orgId);
+            }
+        });
+
+        async function loadOrganizations() {
+            const selector = document.getElementById('org-selector');
+            try {
+                const orgs = await App.getOrganizations();
+                if (orgs.length === 0) {
+                    selector.innerHTML = '<option value="">No organizations found</option>';
+                } else {
+                    selector.innerHTML = '<option value="">Select organization...</option>' +
+                        orgs.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
+
+                    const urlOrgId = App.getUrlParam('org');
+                    if (urlOrgId) {
+                        selector.value = urlOrgId;
+                        loadContacts();
+                    } else if (orgs.length === 1) {
+                        selector.value = orgs[0].id;
+                        loadContacts();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+                selector.innerHTML = '<option value="">Error loading organizations</option>';
+            }
+        }
+
+        async function loadContacts() {
+            const orgId = document.getElementById('org-selector').value;
+            const tbody = document.getElementById('contacts-table-body');
+
+            if (!orgId) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-16 text-gray-400">
+                            Select an organization to view contacts
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('pagination').classList.add('hidden');
+                return;
+            }
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-16">
+                        <div class="inline-flex items-center gap-3 text-gray-400">
+                            <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                            </svg>
+                            <span>Loading contacts...</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            try {
+                let url = `/api/v1/membership/contacts?organization_id=${orgId}&page=${currentPage}&perPage=${perPage}`;
+                if (currentType) url += `&contact_type=${currentType}`;
+                if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch contacts');
+
+                const data = await response.json();
+                renderContacts(data);
+            } catch (err) {
+                console.error('Failed to load contacts:', err);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-16 text-red-500">
+                            Failed to load contacts. Please try again.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderContacts(data) {
+            const tbody = document.getElementById('contacts-table-body');
+            const contacts = data.items || [];
+
+            if (contacts.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-16">
+                            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" class="text-gray-400">
+                                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8l8 5 8-5v10zm-8-7L4 6h16l-8 5z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No contacts found</h3>
+                            <p class="text-gray-500">Add your first contact to get started</p>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('pagination').classList.add('hidden');
+                return;
+            }
+
+            tbody.innerHTML = contacts.map(contact => {
+                const displayName = contact.company_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unknown';
+                const initial = displayName.charAt(0).toUpperCase();
+                return `
+                <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 ${getContactTypeColor(contact.contact_type)} rounded-full flex items-center justify-center font-semibold">
+                                ${initial}
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900">${displayName}</div>
+                                ${contact.company_name && contact.first_name ? `<div class="text-sm text-gray-500">${contact.first_name} ${contact.last_name || ''}</div>` : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">${contact.email || '-'}</td>
+                    <td class="px-6 py-4">
+                        <span class="badge ${getContactTypeBadgeClass(contact.contact_type)}">${formatContactType(contact.contact_type)}</span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">${contact.phone || '-'}</td>
+                    <td class="px-6 py-4 text-gray-600">${contact.created ? App.formatShortDate(contact.created) : '-'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="editContact('${contact.id}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm">Edit</button>
+                    </td>
+                </tr>
+            `}).join('');
+
+            updatePagination(data);
+        }
+
+        function getContactTypeColor(type) {
+            const colors = {
+                donor: 'bg-green-100 text-green-600',
+                vendor: 'bg-blue-100 text-blue-600',
+                sponsor: 'bg-purple-100 text-purple-600',
+                partner: 'bg-orange-100 text-orange-600',
+                grant_maker: 'bg-pink-100 text-pink-600',
+                other: 'bg-gray-100 text-gray-600'
+            };
+            return colors[type] || colors.other;
+        }
+
+        function getContactTypeBadgeClass(type) {
+            const classes = {
+                donor: 'bg-green-100 text-green-700',
+                vendor: 'bg-blue-100 text-blue-700',
+                sponsor: 'bg-purple-100 text-purple-700',
+                partner: 'bg-orange-100 text-orange-700',
+                grant_maker: 'bg-pink-100 text-pink-700',
+                other: 'bg-gray-100 text-gray-700'
+            };
+            return classes[type] || classes.other;
+        }
+
+        function formatContactType(type) {
+            if (!type) return 'Unknown';
+            return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function updatePagination(data) {
+            const pagination = document.getElementById('pagination');
+            const totalItems = data.totalItems || 0;
+            const totalPages = data.totalPages || 1;
+
+            if (totalItems === 0) {
+                pagination.classList.add('hidden');
+                return;
+            }
+
+            pagination.classList.remove('hidden');
+
+            const start = (currentPage - 1) * perPage + 1;
+            const end = Math.min(currentPage * perPage, totalItems);
+
+            document.getElementById('showing-start').textContent = start;
+            document.getElementById('showing-end').textContent = end;
+            document.getElementById('total-items').textContent = totalItems;
+
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+        }
+
+        function setTypeFilter(btn, type) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            currentType = type;
+            currentPage = 1;
+            loadContacts();
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentSearch = document.getElementById('contact-search').value;
+                currentPage = 1;
+                loadContacts();
+            }, 300);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            loadContacts();
+        }
+
+        function showAddContactModal() {
+            const orgId = document.getElementById('org-selector').value;
+            if (!orgId) {
+                App.showNotification('Please select an organization first', 'error');
+                return;
+            }
+            document.getElementById('add-contact-modal').classList.remove('hidden');
+        }
+
+        function hideAddContactModal() {
+            document.getElementById('add-contact-modal').classList.add('hidden');
+            document.getElementById('add-contact-form').reset();
+        }
+
+        async function submitContactForm(event) {
+            event.preventDefault();
+
+            const orgId = document.getElementById('org-selector').value;
+            const submitBtn = document.getElementById('submit-contact-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Adding...';
+
+            const formData = {
+                first_name: document.getElementById('contact-first-name').value || null,
+                last_name: document.getElementById('contact-last-name').value || null,
+                company_name: document.getElementById('contact-company').value || null,
+                email: document.getElementById('contact-email').value || null,
+                phone: document.getElementById('contact-phone').value || null,
+                contact_type: document.getElementById('contact-type').value,
+                address: document.getElementById('contact-address').value || null,
+                notes: document.getElementById('contact-notes').value || null
+            };
+
+            try {
+                const response = await fetch(`/api/v1/membership/contacts?organization_id=${orgId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to add contact');
+                }
+
+                App.showNotification('Contact added successfully!', 'success');
+                hideAddContactModal();
+                loadContacts();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to add contact', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Contact';
+            }
+        }
+
+        function editContact(contactId) {
+            App.showNotification('Edit functionality coming soon', 'info');
+        }
+    </script>
+</body>
+</html>

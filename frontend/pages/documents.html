@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documents - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=3"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=8"></script>
+    <script src="/js/layout.js?v=1"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/theme.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="app-shell">
+    <!-- Header - Rendered by Layout.js -->
+    <header class="app-header"></header>
+
+    <!-- Module Navigation -->
+    <nav class="module-nav"></nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <div class="app-main-inner">
+            <!-- Page Header -->
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <nav class="page-breadcrumb">
+                        <a href="/pages/dashboard.html">Dashboard</a>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span style="color: var(--color-text-primary); font-weight: 500;">Documents</span>
+                    </nav>
+                    <h1 class="page-title">Documents</h1>
+                    <p class="page-description">Organize and manage files for your organization</p>
+                </div>
+                <div class="flex gap-2" id="action-buttons">
+                    <button id="newFolderBtn" onclick="createFolder()" class="btn btn-secondary" style="padding: 0.75rem 1.25rem;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                        </svg>
+                        New Folder
+                    </button>
+                    <button id="uploadBtn" onclick="document.getElementById('fileInput').click()" class="btn btn-primary" style="padding: 0.75rem 1.25rem;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                        </svg>
+                        Upload File
+                    </button>
+                    <input type="file" id="fileInput" class="hidden" onchange="uploadFile()">
+                </div>
+            </div>
+
+            <!-- Document Browser -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Folder Sidebar -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="px-5 py-4 border-b border-gray-100">
+                            <h2 class="text-lg font-semibold text-gray-900">Folders</h2>
+                        </div>
+                        <div class="p-4">
+                            <ul id="folderTree" class="space-y-1">
+                                <li>
+                                    <a href="#" onclick="selectFolder(null); return false;" class="folder-item active">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="text-gray-400">
+                                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                                        </svg>
+                                        <span>All Files</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Files Table -->
+                <div class="lg:col-span-3">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                            <h2 id="currentFolderName" class="text-lg font-semibold text-gray-900">All Files</h2>
+                            <div class="flex items-center gap-3">
+                                <select id="linkType" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="none">Link to...</option>
+                                    <option value="meeting">Meeting</option>
+                                    <option value="project">Project</option>
+                                    <option value="opportunity">Opportunity</option>
+                                    <option value="contact">Contact</option>
+                                    <option value="member">Member</option>
+                                    <option value="organization">Organization</option>
+                                </select>
+                                <input type="text" id="linkId" placeholder="Entity ID (optional)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linked To</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filesTableBody" class="divide-y divide-gray-100">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">Loading files...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+    </footer>
+
+    <style>
+        .folder-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            transition: all 0.15s ease;
+        }
+        .folder-item:hover {
+            background-color: var(--color-bg-secondary);
+            color: var(--color-text-primary);
+        }
+        .folder-item.active {
+            background-color: var(--color-primary-light, #e0e7ff);
+            color: var(--color-primary, #4f46e5);
+            font-weight: 500;
+        }
+        .folder-item.active svg {
+            color: var(--color-primary, #4f46e5);
+        }
+    </style>
+
+    <script>
+        let currentFolderId = null;
+        let currentOrgId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+
+            // Initialize Layout system
+            Layout.init({ module: 'documents' });
+
+            // Get org ID
+            currentOrgId = API.org.getCurrentId();
+
+            // Apply role-based visibility: hide upload/new folder for viewers
+            try {
+                const hasRole = await API.roles.hasMinRole('member', currentOrgId);
+                if (!hasRole) {
+                    document.getElementById('action-buttons').classList.add('hidden');
+                    document.getElementById('linkType').classList.add('hidden');
+                    document.getElementById('linkId').classList.add('hidden');
+                }
+            } catch (e) {
+                console.error('Role visibility error:', e);
+            }
+
+            // Listen for org changes from Layout
+            window.addEventListener('orgchange', (e) => {
+                if (e.detail.orgId) {
+                    currentOrgId = e.detail.orgId;
+                    loadFolders();
+                    loadFiles();
+                }
+            });
+
+            // Initial load
+            await loadFolders();
+            await loadFiles();
+        });
+
+        async function loadFolders(parentId = null) {
+            const folderTree = document.getElementById('folderTree');
+            try {
+                const folders = await API.documents.folders.list(currentOrgId, parentId);
+
+                // Keep the "All Files" root item
+                let html = `
+                    <li>
+                        <a href="#" onclick="selectFolder(null); return false;" class="folder-item ${currentFolderId === null ? 'active' : ''}">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="text-gray-400">
+                                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                            </svg>
+                            <span>All Files</span>
+                        </a>
+                    </li>
+                `;
+
+                folders.forEach(f => {
+                    html += `
+                        <li>
+                            <a href="#" onclick="selectFolder('${f.id}', '${UI.escapeHtml(f.name)}'); return false;" class="folder-item ${currentFolderId === f.id ? 'active' : ''}">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="text-gray-400">
+                                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                                </svg>
+                                <span>${UI.escapeHtml(f.name)}</span>
+                            </a>
+                        </li>
+                    `;
+                });
+
+                folderTree.innerHTML = html;
+            } catch (err) {
+                console.error('Failed to load folders:', err);
+            }
+        }
+
+        function selectFolder(folderId, folderName) {
+            currentFolderId = folderId;
+            document.getElementById('currentFolderName').textContent = folderName || 'All Files';
+
+            // Update active state
+            document.querySelectorAll('.folder-item').forEach(el => el.classList.remove('active'));
+            event.target.closest('.folder-item')?.classList.add('active');
+
+            loadFiles();
+        }
+
+        async function loadFiles() {
+            const tbody = document.getElementById('filesTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">Loading...</td></tr>';
+
+            try {
+                const files = await API.documents.files.list(currentOrgId, currentFolderId);
+
+                if (!files || files.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="text-gray-400 mb-2">
+                                    <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto">
+                                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                                    </svg>
+                                </div>
+                                <p class="text-gray-500">No files found</p>
+                                <p class="text-sm text-gray-400">Upload files to get started</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = files.map(f => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                                    ${getFileIcon(f.mime_type)}
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">${UI.escapeHtml(f.filename)}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${f.mime_type || '-'}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${formatFileSize(f.size)}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${UI.formatShortDate(f.created)}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${formatLinked(f.linked_to_type, f.linked_to_id)}</td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="downloadFile('${f.id}', '${UI.escapeHtml(f.filename)}')" class="text-blue-600 hover:text-blue-700 text-sm font-medium">Download</button>
+                                <button onclick="deleteFile('${f.id}')" class="text-red-600 hover:text-red-700 text-sm font-medium">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Failed to load files:', err);
+                // Show friendly empty state instead of error for common cases
+                // (API not available, feature not implemented, etc.)
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="text-gray-400 mb-2">
+                                <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto">
+                                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                                </svg>
+                            </div>
+                            <p class="text-gray-500">No files found</p>
+                            <p class="text-sm text-gray-400">Upload files to get started</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function getFileIcon(mimeType) {
+            if (!mimeType) {
+                return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-gray-400"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>';
+            }
+            if (mimeType.startsWith('image/')) {
+                return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-500"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>';
+            }
+            if (mimeType.includes('pdf')) {
+                return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-red-500"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>';
+            }
+            if (mimeType.includes('word') || mimeType.includes('document')) {
+                return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-500"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>';
+            }
+            if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
+                return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 11h-2v2H9v-2H7v-2h2V9h2v2h2v2zm0-6V3.5L18.5 9H13z"/></svg>';
+            }
+            return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-gray-400"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>';
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return '-';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let i = 0;
+            while (bytes >= 1024 && i < units.length - 1) {
+                bytes /= 1024;
+                i++;
+            }
+            return bytes.toFixed(1) + ' ' + units[i];
+        }
+
+        function formatLinked(type, id) {
+            if (!type || type === 'none') return '-';
+            return `${type}${id ? ' #' + id : ''}`;
+        }
+
+        async function createFolder() {
+            const name = prompt('Enter folder name:');
+            if (!name) return;
+
+            try {
+                await API.documents.folders.create({
+                    organization_id: currentOrgId,
+                    name,
+                    parent_id: currentFolderId || null
+                });
+                App.showNotification('Folder created', 'success');
+                await loadFolders();
+            } catch (err) {
+                console.error('Failed to create folder:', err);
+                App.showNotification('Failed to create folder', 'error');
+            }
+        }
+
+        async function uploadFile() {
+            const input = document.getElementById('fileInput');
+            const file = input.files?.[0];
+            if (!file) return;
+
+            const form = new FormData();
+            form.append('file', file);
+            form.append('organization_id', currentOrgId);
+            if (currentFolderId) form.append('folder_id', currentFolderId);
+
+            const linkType = document.getElementById('linkType').value;
+            const linkId = document.getElementById('linkId').value;
+            if (linkType && linkType !== 'none') form.append('linked_to_type', linkType);
+            if (linkId) form.append('linked_to_id', linkId);
+
+            try {
+                await API.documents.files.upload(form);
+                App.showNotification('File uploaded', 'success');
+                input.value = '';
+                document.getElementById('linkId').value = '';
+                document.getElementById('linkType').value = 'none';
+                await loadFiles();
+            } catch (err) {
+                console.error('Failed to upload file:', err);
+                App.showNotification('Failed to upload file', 'error');
+            }
+        }
+
+        async function downloadFile(fileId, filename) {
+            try {
+                const resp = await API.documents.files.download(fileId);
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename || 'download';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error('Failed to download file:', err);
+                App.showNotification('Failed to download file', 'error');
+            }
+        }
+
+        async function deleteFile(fileId) {
+            if (!confirm('Delete this file? This action cannot be undone.')) return;
+
+            try {
+                await API.documents.files.delete(fileId);
+                App.showNotification('File deleted', 'success');
+                await loadFiles();
+            } catch (err) {
+                console.error('Failed to delete file:', err);
+                App.showNotification('Failed to delete file', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

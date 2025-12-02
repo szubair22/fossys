@@ -1,0 +1,11 @@
+<!-- Organization card fragment for HTMX responses -->
+<!-- This is a template - actual data is injected server-side or via JS -->
+<a href="/pages/organization.html?id={{id}}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-lg transition card-hover flex items-start gap-4">
+    <div class="w-12 h-12 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-lg flex-shrink-0">
+        {{initial}}
+    </div>
+    <div>
+        <h3 class="font-semibold text-gray-900 mb-1">{{name}}</h3>
+        <p class="text-sm text-gray-500 line-clamp-2">{{description}}</p>
+    </div>
+</a>

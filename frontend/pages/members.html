@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=3"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=8"></script>
+    <script src="/js/layout.js?v=1"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/theme.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="app-shell">
+    <!-- Header - Rendered by Layout.js -->
+    <header class="app-header"></header>
+
+    <!-- Module Navigation -->
+    <nav class="module-nav"></nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <div class="app-main-inner">
+            <!-- Hidden org selector for test compatibility - org selection is in header -->
+            <select id="org-selector" data-testid="org-selector" class="hidden" onchange="loadMembers()">
+                <option value="">Loading organizations...</option>
+            </select>
+
+            <!-- Page Header -->
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <nav class="page-breadcrumb">
+                        <a href="/pages/dashboard.html">Dashboard</a>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span>Membership</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span style="color: var(--color-text-primary); font-weight: 500;">Members</span>
+                    </nav>
+                    <h1 class="page-title">Members</h1>
+                    <p class="page-description">Manage organization members and their status</p>
+                </div>
+                <button onclick="showAddMemberModal()" class="btn btn-primary" style="padding: 0.75rem 1.25rem;" data-require-role="admin" data-testid="add-member-btn" id="add-member-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Add Member
+                </button>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                <div class="flex flex-wrap gap-4 items-center">
+                    <!-- Status Filter -->
+                    <div class="flex gap-2">
+                        <button class="filter-btn active" data-status="" onclick="setStatusFilter(this, '')">All</button>
+                        <button class="filter-btn" data-status="active" onclick="setStatusFilter(this, 'active')">Active</button>
+                        <button class="filter-btn" data-status="inactive" onclick="setStatusFilter(this, 'inactive')">Inactive</button>
+                        <button class="filter-btn" data-status="pending" onclick="setStatusFilter(this, 'pending')">Pending</button>
+                        <button class="filter-btn" data-status="alumni" onclick="setStatusFilter(this, 'alumni')">Alumni</button>
+                        <button class="filter-btn" data-status="guest" onclick="setStatusFilter(this, 'guest')">Guest</button>
+                        <button class="filter-btn" data-status="honorary" onclick="setStatusFilter(this, 'honorary')">Honorary</button>
+                        <button class="filter-btn" data-status="suspended" onclick="setStatusFilter(this, 'suspended')">Suspended</button>
+                    </div>
+                    <!-- Search -->
+                    <div class="flex-1 min-w-[200px]">
+                        <input type="text" id="member-search" placeholder="Search by name or email..."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               oninput="debounceSearch()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Members Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Name</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Email</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Type</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-700">Joined</th>
+                            <th class="text-right px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="members-table-body">
+                        <tr>
+                            <td colspan="6" class="text-center py-16">
+                                <div class="inline-flex items-center gap-3 text-gray-400">
+                                    <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                    </svg>
+                                    <span>Select an organization to view members</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="flex justify-between items-center mt-6 hidden">
+                <div class="text-sm text-gray-500">
+                    Showing <span id="showing-start">0</span>-<span id="showing-end">0</span> of <span id="total-items">0</span> members
+                </div>
+                <div class="flex gap-2">
+                    <button id="prev-page" onclick="changePage(-1)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Previous</button>
+                    <button id="next-page" onclick="changePage(1)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Member Modal -->
+    <div id="add-member-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-lg">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Add New Member</h2>
+                <button onclick="hideAddMemberModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="add-member-form" class="space-y-5" onsubmit="submitMemberForm(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                    <input type="text" name="name" id="member-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" name="email" id="member-email" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input type="tel" name="phone" id="member-phone" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select name="status" id="member-status" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="active">Active</option>
+                            <option value="pending">Pending</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="guest">Guest</option>
+                            <option value="alumni">Alumni</option>
+                            <option value="honorary">Honorary</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Member Type</label>
+                        <select name="member_type" id="member-type" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="regular">Regular</option>
+                            <option value="board">Board</option>
+                            <option value="staff">Staff</option>
+                            <option value="volunteer">Volunteer</option>
+                            <option value="lifetime">Lifetime</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <textarea name="notes" id="member-notes" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2"></textarea>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddMemberModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" id="submit-member-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Add Member
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Member Modal -->
+    <div id="edit-member-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-lg">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Edit Member</h2>
+                <button onclick="hideEditMemberModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="edit-member-form" class="space-y-5" onsubmit="submitEditMemberForm(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                    <input type="text" id="edit-member-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="edit-member-email" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input type="tel" id="edit-member-phone" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="edit-member-status" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="active">Active</option>
+                            <option value="pending">Pending</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="guest">Guest</option>
+                            <option value="alumni">Alumni</option>
+                            <option value="honorary">Honorary</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Member Type</label>
+                        <select id="edit-member-type" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="regular">Regular</option>
+                            <option value="board">Board</option>
+                            <option value="staff">Staff</option>
+                            <option value="volunteer">Volunteer</option>
+                            <option value="lifetime">Lifetime</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Member Number</label>
+                        <input type="text" id="edit-member-number" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Join Date</label>
+                        <input type="date" id="edit-member-join-date" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <textarea id="edit-member-notes" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2"></textarea>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideEditMemberModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" id="submit-edit-member-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+    </footer>
+
+    <script>
+        let currentPage = 1;
+        let currentStatus = '';
+        let currentSearch = '';
+        let searchTimeout = null;
+        const perPage = 30;
+
+        // Organization settings (loaded dynamically)
+        let membershipConfig = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+
+            // Initialize Layout system
+            Layout.init({ module: 'membership' });
+            Layout.renderModuleNav('membership', 'members');
+
+            // Load organizations for selector
+            await loadOrganizations();
+
+            // Listen for org changes from Layout
+            window.addEventListener('orgchange', (e) => {
+                if (e.detail.orgId) {
+                    document.getElementById('org-selector').value = e.detail.orgId;
+                    loadMembers();
+                }
+            });
+
+            // Apply role-based UI visibility
+            const orgId = document.getElementById('org-selector')?.value;
+            if (orgId && typeof UI !== 'undefined' && UI.initRoleBasedUI) {
+                await UI.initRoleBasedUI(orgId);
+            }
+        });
+
+        // Fetch membership settings for the selected organization
+        async function loadMembershipSettings(orgId) {
+            if (!orgId) {
+                membershipConfig = null;
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/settings/membership?organization_id=${orgId}`, {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                if (response.ok) {
+                    membershipConfig = await response.json();
+                    console.log('Loaded membership settings:', membershipConfig);
+                    updateFormDropdowns();
+                    updateFilterButtons();
+                } else {
+                    // Fall back to defaults if settings API fails
+                    membershipConfig = getDefaultMembershipConfig();
+                }
+            } catch (err) {
+                console.warn('Failed to load membership settings, using defaults:', err);
+                membershipConfig = getDefaultMembershipConfig();
+            }
+        }
+
+        // Default config (fallback)
+        function getDefaultMembershipConfig() {
+            return {
+                member_types: ['Regular', 'Associate', 'Lifetime', 'Student', 'Board', 'Volunteer', 'Staff'],
+                member_statuses: ['Active', 'Inactive', 'Pending', 'Alumni', 'Guest', 'Honorary', 'Suspended'],
+                member_id_format: 'ORG-{year}-{seq:04d}',
+                require_phone: false,
+                require_email: false
+            };
+        }
+
+        // Update form dropdowns based on settings
+        function updateFormDropdowns() {
+            const config = membershipConfig || getDefaultMembershipConfig();
+
+            // Update status dropdowns
+            const statusSelects = ['member-status', 'edit-member-status'];
+            statusSelects.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = config.member_statuses.map(status => {
+                        const value = status.toLowerCase();
+                        return `<option value="${value}">${status}</option>`;
+                    }).join('');
+                }
+            });
+
+            // Update member type dropdowns
+            const typeSelects = ['member-type', 'edit-member-type'];
+            typeSelects.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = config.member_types.map(type => {
+                        const value = type.toLowerCase();
+                        return `<option value="${value}">${type}</option>`;
+                    }).join('');
+                }
+            });
+
+            // Update required field indicators
+            updateRequiredFields();
+        }
+
+        // Update filter buttons based on settings
+        function updateFilterButtons() {
+            const config = membershipConfig || getDefaultMembershipConfig();
+            const filterContainer = document.querySelector('.filter-btn').parentElement;
+
+            if (filterContainer) {
+                // Keep "All" button, rebuild status filter buttons from config
+                const allBtn = '<button class="filter-btn active" data-status="" onclick="setStatusFilter(this, \'\')">All</button>';
+                const statusBtns = config.member_statuses.map(status => {
+                    const value = status.toLowerCase();
+                    return `<button class="filter-btn" data-status="${value}" onclick="setStatusFilter(this, '${value}')">${status}</button>`;
+                }).join('');
+
+                filterContainer.innerHTML = allBtn + statusBtns;
+            }
+        }
+
+        // Update required field indicators in forms
+        function updateRequiredFields() {
+            const config = membershipConfig || getDefaultMembershipConfig();
+
+            // Phone field
+            const phoneLabels = document.querySelectorAll('label[for="member-phone"], label[for="edit-member-phone"]');
+            phoneLabels.forEach(label => {
+                const text = label.textContent.replace(' *', '');
+                label.textContent = config.require_phone ? text + ' *' : text;
+            });
+            const phoneInputs = document.querySelectorAll('#member-phone, #edit-member-phone');
+            phoneInputs.forEach(input => {
+                input.required = config.require_phone;
+            });
+
+            // Email field
+            const emailLabels = document.querySelectorAll('label[for="member-email"], label[for="edit-member-email"]');
+            emailLabels.forEach(label => {
+                const text = label.textContent.replace(' *', '');
+                label.textContent = config.require_email ? text + ' *' : text;
+            });
+            const emailInputs = document.querySelectorAll('#member-email, #edit-member-email');
+            emailInputs.forEach(input => {
+                input.required = config.require_email;
+            });
+
+            // Show member ID format hint if configured
+            if (config.member_id_format) {
+                const memberNumberInputs = document.querySelectorAll('#edit-member-number');
+                memberNumberInputs.forEach(input => {
+                    const hint = input.parentElement.querySelector('.id-format-hint');
+                    if (!hint) {
+                        const hintEl = document.createElement('div');
+                        hintEl.className = 'id-format-hint text-xs text-gray-400 mt-1';
+                        hintEl.textContent = `Format: ${config.member_id_format}`;
+                        input.parentElement.appendChild(hintEl);
+                    } else {
+                        hint.textContent = `Format: ${config.member_id_format}`;
+                    }
+                });
+            }
+        }
+
+        async function loadOrganizations() {
+            const selector = document.getElementById('org-selector');
+            try {
+                const orgs = await App.getOrganizations();
+                if (orgs.length === 0) {
+                    selector.innerHTML = '<option value="">No organizations found</option>';
+                } else {
+                    selector.innerHTML = '<option value="">Select organization...</option>' +
+                        orgs.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
+
+                    // Auto-select if only one org or from URL param
+                    const urlOrgId = App.getUrlParam('org');
+                    if (urlOrgId) {
+                        selector.value = urlOrgId;
+                        loadMembers();
+                    } else if (orgs.length === 1) {
+                        selector.value = orgs[0].id;
+                        loadMembers();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+                selector.innerHTML = '<option value="">Error loading organizations</option>';
+            }
+        }
+
+        async function loadMembers() {
+            const orgId = document.getElementById('org-selector').value;
+            const tbody = document.getElementById('members-table-body');
+
+            if (!orgId) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-16 text-gray-400">
+                            Select an organization to view members
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('pagination').classList.add('hidden');
+                membershipConfig = null;
+                return;
+            }
+
+            // Show loading
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-16">
+                        <div class="inline-flex items-center gap-3 text-gray-400">
+                            <svg class="animate-spin" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                            </svg>
+                            <span>Loading members...</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            try {
+                // Load membership settings for this org (in parallel with members)
+                await loadMembershipSettings(orgId);
+
+                // Build query params
+                let url = `/api/v1/membership/members?organization_id=${orgId}&page=${currentPage}&perPage=${perPage}`;
+                if (currentStatus) url += `&status=${currentStatus}`;
+                if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch members');
+
+                const data = await response.json();
+                renderMembers(data);
+            } catch (err) {
+                console.error('Failed to load members:', err);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-16 text-red-500">
+                            Failed to load members. Please try again.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderMembers(data) {
+            const tbody = document.getElementById('members-table-body');
+            const members = data.items || [];
+
+            if (members.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-16">
+                            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" class="text-gray-400">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No members found</h3>
+                            <p class="text-gray-500">Add your first member to get started</p>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('pagination').classList.add('hidden');
+                return;
+            }
+
+            tbody.innerHTML = members.map(member => {
+                const initials = (member.name || '?').split(' ').map(n => n.charAt(0).toUpperCase()).slice(0, 2).join('');
+                return `
+                <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-semibold">
+                                ${initials}
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900">${member.name || ''}</div>
+                                ${member.member_number ? `<div class="text-xs text-gray-400">#${member.member_number}</div>` : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">${member.email || '-'}</td>
+                    <td class="px-6 py-4">
+                        <span class="badge ${getMemberStatusBadgeClass(member.status)}">${member.status || 'unknown'}</span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600 capitalize">${member.member_type || 'regular'}</td>
+                    <td class="px-6 py-4 text-gray-600">${member.join_date ? App.formatShortDate(member.join_date) : '-'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="editMember('${member.id}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm">Edit</button>
+                            <button onclick="deleteMember('${member.id}', '${(member.name || '').replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 font-medium text-sm">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+
+            // Update pagination
+            updatePagination(data);
+        }
+
+        function getMemberStatusBadgeClass(status) {
+            const classes = {
+                active: 'bg-green-100 text-green-700',
+                inactive: 'bg-gray-100 text-gray-700',
+                pending: 'bg-yellow-100 text-yellow-700',
+                alumni: 'bg-blue-100 text-blue-700',
+                guest: 'bg-purple-100 text-purple-700',
+                honorary: 'bg-pink-100 text-pink-700',
+                suspended: 'bg-red-100 text-red-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        }
+
+        function updatePagination(data) {
+            const pagination = document.getElementById('pagination');
+            const totalItems = data.totalItems || 0;
+            const totalPages = data.totalPages || 1;
+
+            if (totalItems === 0) {
+                pagination.classList.add('hidden');
+                return;
+            }
+
+            pagination.classList.remove('hidden');
+
+            const start = (currentPage - 1) * perPage + 1;
+            const end = Math.min(currentPage * perPage, totalItems);
+
+            document.getElementById('showing-start').textContent = start;
+            document.getElementById('showing-end').textContent = end;
+            document.getElementById('total-items').textContent = totalItems;
+
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+        }
+
+        function setStatusFilter(btn, status) {
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            currentStatus = status;
+            currentPage = 1;
+            loadMembers();
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentSearch = document.getElementById('member-search').value;
+                currentPage = 1;
+                loadMembers();
+            }, 300);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            loadMembers();
+        }
+
+        function showAddMemberModal() {
+            const orgId = document.getElementById('org-selector').value;
+            if (!orgId) {
+                App.showNotification('Please select an organization first', 'error');
+                return;
+            }
+            document.getElementById('add-member-modal').classList.remove('hidden');
+        }
+
+        function hideAddMemberModal() {
+            document.getElementById('add-member-modal').classList.add('hidden');
+            document.getElementById('add-member-form').reset();
+        }
+
+        async function submitMemberForm(event) {
+            event.preventDefault();
+
+            const orgId = document.getElementById('org-selector').value;
+            const submitBtn = document.getElementById('submit-member-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Adding...';
+
+            const formData = {
+                name: document.getElementById('member-name').value,
+                email: document.getElementById('member-email').value || null,
+                phone: document.getElementById('member-phone').value || null,
+                status: document.getElementById('member-status').value,
+                member_type: document.getElementById('member-type').value,
+                notes: document.getElementById('member-notes').value || null
+            };
+
+            try {
+                const response = await fetch(`/api/v1/membership/members?organization_id=${orgId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to add member');
+                }
+
+                App.showNotification('Member added successfully!', 'success');
+                hideAddMemberModal();
+                loadMembers();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to add member', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Member';
+            }
+        }
+
+        let editingMemberId = null;
+
+        async function editMember(memberId) {
+            const orgId = document.getElementById('org-selector').value;
+            editingMemberId = memberId;
+
+            try {
+                const response = await fetch(`/api/v1/membership/members/${memberId}?organization_id=${orgId}`, {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch member');
+
+                const member = await response.json();
+
+                // Populate the edit form
+                document.getElementById('edit-member-name').value = member.name || '';
+                document.getElementById('edit-member-email').value = member.email || '';
+                document.getElementById('edit-member-phone').value = member.phone || '';
+                document.getElementById('edit-member-status').value = member.status || 'active';
+                document.getElementById('edit-member-type').value = member.member_type || 'regular';
+                document.getElementById('edit-member-number').value = member.member_number || '';
+                document.getElementById('edit-member-join-date').value = member.join_date || '';
+                document.getElementById('edit-member-notes').value = member.notes || '';
+
+                document.getElementById('edit-member-modal').classList.remove('hidden');
+            } catch (err) {
+                App.showNotification('Failed to load member details', 'error');
+            }
+        }
+
+        function hideEditMemberModal() {
+            document.getElementById('edit-member-modal').classList.add('hidden');
+            editingMemberId = null;
+        }
+
+        async function submitEditMemberForm(event) {
+            event.preventDefault();
+
+            const orgId = document.getElementById('org-selector').value;
+            const submitBtn = document.getElementById('submit-edit-member-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            const formData = {
+                name: document.getElementById('edit-member-name').value,
+                email: document.getElementById('edit-member-email').value || null,
+                phone: document.getElementById('edit-member-phone').value || null,
+                status: document.getElementById('edit-member-status').value,
+                member_type: document.getElementById('edit-member-type').value,
+                member_number: document.getElementById('edit-member-number').value || null,
+                join_date: document.getElementById('edit-member-join-date').value || null,
+                notes: document.getElementById('edit-member-notes').value || null
+            };
+
+            try {
+                const response = await fetch(`/api/v1/membership/members/${editingMemberId}?organization_id=${orgId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to update member');
+                }
+
+                App.showNotification('Member updated successfully!', 'success');
+                hideEditMemberModal();
+                loadMembers();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to update member', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Changes';
+            }
+        }
+
+        async function deleteMember(memberId, memberName) {
+            if (!confirm(`Are you sure you want to delete "${memberName}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            const orgId = document.getElementById('org-selector').value;
+
+            try {
+                const response = await fetch(`/api/v1/membership/members/${memberId}?organization_id=${orgId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to delete member');
+                }
+
+                App.showNotification('Member deleted successfully', 'success');
+                loadMembers();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to delete member', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

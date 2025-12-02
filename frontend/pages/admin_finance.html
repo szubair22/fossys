@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Settings - OrgSuite Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            background: #FEF3C7;
+            color: #D97706;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .chip button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 1rem;
+            height: 1rem;
+            margin-left: 0.25rem;
+            color: #F59E0B;
+        }
+        .chip.dimension {
+            background: #EDE9FE;
+            color: #7C3AED;
+        }
+        .chip.dimension button {
+            color: #8B5CF6;
+        }
+        /* Edition card styles */
+        .edition-card {
+            border-color: #E5E7EB;
+        }
+        .edition-card.selected {
+            border-color: #3B82F6;
+            background: #EFF6FF;
+        }
+        .edition-card.selected.nonprofit {
+            border-color: #10B981;
+            background: #ECFDF5;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>OrgSuite</span>
+            </a>
+            <nav class="flex items-center gap-6" id="nav-menu"></nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-10">
+        <div class="max-w-4xl mx-auto px-6">
+            <!-- Organization Selector -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Organization</label>
+                <select id="org-selector" data-testid="org-selector" class="w-full max-w-xs px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="loadSettings()">
+                    <option value="">Loading organizations...</option>
+                </select>
+            </div>
+
+            <!-- Page Header -->
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                        <a href="/pages/organizations.html" class="hover:text-blue-600">Organizations</a>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span class="text-gray-700">Admin</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        <span class="text-gray-900 font-medium">Finance Settings</span>
+                    </nav>
+                    <h1 class="text-3xl font-bold text-gray-900">Finance Settings</h1>
+                    <p class="text-gray-500 mt-2">Configure fiscal year, currency, and payment options</p>
+                </div>
+            </div>
+
+            <!-- Admin Navigation Tabs -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-2 mb-6">
+                <div class="flex gap-2">
+                    <a href="/pages/admin_org_settings.html" class="flex-1 px-4 py-2.5 text-center rounded-lg text-gray-600 hover:bg-gray-50 font-medium">General</a>
+                    <a href="/pages/admin_governance.html" class="flex-1 px-4 py-2.5 text-center rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Governance</a>
+                    <a href="/pages/admin_membership.html" class="flex-1 px-4 py-2.5 text-center rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Membership</a>
+                    <a href="/pages/admin_finance.html" class="flex-1 px-4 py-2.5 text-center rounded-lg bg-blue-50 text-blue-700 font-medium">Finance</a>
+                </div>
+            </div>
+
+            <!-- Settings Form -->
+            <div id="settings-content" class="space-y-6">
+                <!-- Edition Mode Section -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-purple-600">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Edition Mode</h2>
+                            <p class="text-sm text-gray-500">Choose the edition that best fits your organization</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Startup Edition -->
+                        <label id="edition-startup-card" data-testid="edition-startup-card" class="edition-card cursor-pointer relative flex flex-col p-5 border-2 rounded-xl transition-all hover:border-blue-300">
+                            <input type="radio" name="edition" value="startup" class="sr-only" onchange="selectEdition('startup')">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">Startup Edition</h3>
+                                    <span class="text-xs text-gray-500">Simple cash-basis accounting</span>
+                                </div>
+                                <div id="edition-startup-check" class="ml-auto hidden">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-blue-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <ul class="text-sm text-gray-600 space-y-1.5 ml-11">
+                                <li class="flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-green-500"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    Cash basis accounting
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-green-500"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    Basic journal entries
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-green-500"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    Chart of accounts
+                                </li>
+                                <li class="flex items-center gap-2 text-gray-400">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                    No revenue recognition
+                                </li>
+                                <li class="flex items-center gap-2 text-gray-400">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                    No fund restrictions
+                                </li>
+                            </ul>
+                        </label>
+
+                        <!-- Nonprofit Edition -->
+                        <label id="edition-nonprofit-card" data-testid="edition-nonprofit-card" class="edition-card cursor-pointer relative flex flex-col p-5 border-2 rounded-xl transition-all hover:border-green-300">
+                            <input type="radio" name="edition" value="nonprofit" class="sr-only" onchange="selectEdition('nonprofit')">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">Nonprofit Edition</h3>
+                                    <span class="text-xs text-gray-500">GAAP + restricted funds + donations</span>
+                                </div>
+                                <div id="edition-nonprofit-check" class="ml-auto hidden">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-green-600">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <ul class="text-sm text-gray-600 space-y-1.5 ml-11">
+                                <li class="flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-green-500"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    Nonprofit GAAP accounting
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-green-500"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    Revenue recognition (ASC 606/958)
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-green-500"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    Contracts module
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-green-500"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    Fund restrictions
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="text-green-500"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                    Donations &amp; grants tracking
+                                </li>
+                            </ul>
+                        </label>
+                    </div>
+
+                    <p class="text-xs text-gray-500 mt-4">
+                        <strong>Note:</strong> Changing editions will update default feature flags. Your existing data will not be affected.
+                    </p>
+                </div>
+
+                <!-- Finance Configuration Section -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-yellow-600">
+                                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Finance Configuration</h2>
+                            <p class="text-sm text-gray-500">Fiscal year, currency, and payment settings</p>
+                        </div>
+                    </div>
+
+                    <form id="finance-settings-form" class="space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fiscal Year Start Month</label>
+                                <select id="setting-fiscal-month" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Default Currency</label>
+                                <select id="setting-currency" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="USD">USD - US Dollar</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="GBP">GBP - British Pound</option>
+                                    <option value="CAD">CAD - Canadian Dollar</option>
+                                    <option value="AUD">AUD - Australian Dollar</option>
+                                    <option value="JPY">JPY - Japanese Yen</option>
+                                    <option value="CHF">CHF - Swiss Franc</option>
+                                    <option value="NGN">NGN - Nigerian Naira</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Payment Methods -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Methods</label>
+                            <p class="text-xs text-gray-500 mb-2">Accepted payment methods for donations and transactions</p>
+                            <div id="payment-methods-container" class="flex flex-wrap gap-2 p-3 border border-gray-200 rounded-xl min-h-[50px] mb-2">
+                                <!-- Chips will be added here -->
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-payment-method" placeholder="Add payment method..."
+                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <button type="button" onclick="addPaymentMethod()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Add</button>
+                            </div>
+                        </div>
+
+                        <!-- Tracking Dimensions -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tracking Dimensions</label>
+                            <p class="text-xs text-gray-500 mb-2">Optional dimensions for categorizing transactions (e.g., Department, Project, Location)</p>
+                            <div id="dimensions-container" class="flex flex-wrap gap-2 p-3 border border-gray-200 rounded-xl min-h-[50px] mb-2">
+                                <!-- Chips will be added here -->
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-dimension" placeholder="Add dimension..."
+                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <button type="button" onclick="addDimension()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Add</button>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                            <button type="button" onclick="loadSettings()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Reset</button>
+                            <button type="submit" id="save-settings-btn" data-testid="save-settings-btn" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                                Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentOrgId = '';
+        let paymentMethods = [];
+        let dimensions = [];
+        let currentEdition = 'startup';
+
+        const defaultPaymentMethods = ['Cash', 'Check', 'Credit Card', 'Bank Transfer', 'PayPal', 'Venmo', 'Other'];
+        const defaultDimensions = ['department', 'location', 'project'];
+
+        // Edition defaults
+        const STARTUP_DEFAULTS = {
+            edition: 'startup',
+            accounting_basis: 'cash',
+            enable_rev_rec: false,
+            enable_contracts: false,
+            enable_restrictions: false,
+            enable_donations: false,
+            enable_budgeting: false
+        };
+
+        const NONPROFIT_DEFAULTS = {
+            edition: 'nonprofit',
+            accounting_basis: 'nonprofit_gaap',
+            enable_rev_rec: true,
+            enable_contracts: true,
+            enable_restrictions: true,
+            enable_donations: true,
+            enable_budgeting: true
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+            App.updateNav();
+
+            await loadOrganizations();
+
+            document.getElementById('finance-settings-form').addEventListener('submit', saveSettings);
+
+            // Enter key handlers
+            document.getElementById('new-payment-method').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); addPaymentMethod(); }
+            });
+            document.getElementById('new-dimension').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); addDimension(); }
+            });
+        });
+
+        async function loadOrganizations() {
+            const selector = document.getElementById('org-selector');
+            try {
+                const orgs = await App.getOrganizations();
+                const adminOrgs = orgs.filter(org =>
+                    org.user_role === 'owner' || org.user_role === 'admin'
+                );
+
+                if (adminOrgs.length === 0) {
+                    selector.innerHTML = '<option value="">No organizations with admin access</option>';
+                } else {
+                    selector.innerHTML = '<option value="">Select organization...</option>' +
+                        adminOrgs.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
+
+                    const urlOrgId = App.getUrlParam('org');
+                    if (urlOrgId && adminOrgs.find(o => o.id === urlOrgId)) {
+                        selector.value = urlOrgId;
+                        loadSettings();
+                    } else if (adminOrgs.length === 1) {
+                        selector.value = adminOrgs[0].id;
+                        loadSettings();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+                selector.innerHTML = '<option value="">Error loading organizations</option>';
+            }
+        }
+
+        async function loadSettings() {
+            const orgId = document.getElementById('org-selector').value;
+            if (!orgId) return;
+
+            currentOrgId = orgId;
+
+            try {
+                const response = await fetch(`/api/v1/admin/org-settings/effective?organization_id=${orgId}&scope=finance`, {
+                    headers: { 'Authorization': `Bearer ${App.pb.authStore.token}` }
+                });
+
+                let config = {};
+                if (response.ok) {
+                    const data = await response.json();
+                    config = data.settings.finance || {};
+                }
+
+                // Populate form
+                document.getElementById('setting-fiscal-month').value = config.fiscal_year_start_month || 1;
+                document.getElementById('setting-currency').value = config.default_currency || 'USD';
+
+                // Payment methods
+                paymentMethods = config.payment_methods || [...defaultPaymentMethods];
+                renderPaymentMethods();
+
+                // Dimensions
+                dimensions = config.enabled_dimensions || [...defaultDimensions];
+                renderDimensions();
+
+                // Edition selection
+                currentEdition = config.edition || 'startup';
+                updateEditionUI(currentEdition);
+
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+                paymentMethods = [...defaultPaymentMethods];
+                dimensions = [...defaultDimensions];
+                currentEdition = 'startup';
+                renderPaymentMethods();
+                renderDimensions();
+                updateEditionUI(currentEdition);
+            }
+        }
+
+        function updateEditionUI(edition) {
+            // Reset all cards
+            document.querySelectorAll('.edition-card').forEach(card => {
+                card.classList.remove('selected', 'nonprofit');
+            });
+
+            // Hide all checkmarks
+            document.getElementById('edition-startup-check').classList.add('hidden');
+            document.getElementById('edition-nonprofit-check').classList.add('hidden');
+
+            // Update radio buttons
+            const startupRadio = document.querySelector('input[name="edition"][value="startup"]');
+            const nonprofitRadio = document.querySelector('input[name="edition"][value="nonprofit"]');
+            if (startupRadio) startupRadio.checked = (edition === 'startup');
+            if (nonprofitRadio) nonprofitRadio.checked = (edition === 'nonprofit');
+
+            // Show selected card
+            if (edition === 'startup') {
+                document.getElementById('edition-startup-card').classList.add('selected');
+                document.getElementById('edition-startup-check').classList.remove('hidden');
+            } else if (edition === 'nonprofit') {
+                document.getElementById('edition-nonprofit-card').classList.add('selected', 'nonprofit');
+                document.getElementById('edition-nonprofit-check').classList.remove('hidden');
+            }
+        }
+
+        function selectEdition(edition) {
+            currentEdition = edition;
+            updateEditionUI(edition);
+
+            // Show confirmation that edition will be saved with other settings
+            App.showNotification(`Selected ${edition === 'nonprofit' ? 'Nonprofit' : 'Startup'} Edition. Click "Save Settings" to apply.`, 'info');
+        }
+
+        function renderPaymentMethods() {
+            const container = document.getElementById('payment-methods-container');
+            container.innerHTML = paymentMethods.map((method, idx) => `
+                <span class="chip">
+                    ${method}
+                    <button type="button" onclick="removePaymentMethod(${idx})">&times;</button>
+                </span>
+            `).join('');
+        }
+
+        function renderDimensions() {
+            const container = document.getElementById('dimensions-container');
+            container.innerHTML = dimensions.map((dim, idx) => `
+                <span class="chip dimension">
+                    ${dim}
+                    <button type="button" onclick="removeDimension(${idx})">&times;</button>
+                </span>
+            `).join('');
+        }
+
+        function addPaymentMethod() {
+            const input = document.getElementById('new-payment-method');
+            const value = input.value.trim();
+            if (value && !paymentMethods.includes(value)) {
+                paymentMethods.push(value);
+                renderPaymentMethods();
+                input.value = '';
+            }
+        }
+
+        function removePaymentMethod(idx) {
+            paymentMethods.splice(idx, 1);
+            renderPaymentMethods();
+        }
+
+        function addDimension() {
+            const input = document.getElementById('new-dimension');
+            const value = input.value.trim().toLowerCase();
+            if (value && !dimensions.includes(value)) {
+                dimensions.push(value);
+                renderDimensions();
+                input.value = '';
+            }
+        }
+
+        function removeDimension(idx) {
+            dimensions.splice(idx, 1);
+            renderDimensions();
+        }
+
+        async function saveSettings(event) {
+            event.preventDefault();
+
+            if (!currentOrgId) {
+                App.showNotification('Please select an organization first', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('save-settings-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                // Get edition-specific defaults
+                const editionDefaults = currentEdition === 'nonprofit' ? NONPROFIT_DEFAULTS : STARTUP_DEFAULTS;
+
+                const config = {
+                    // Basic finance settings
+                    fiscal_year_start_month: parseInt(document.getElementById('setting-fiscal-month').value),
+                    default_currency: document.getElementById('setting-currency').value,
+                    payment_methods: paymentMethods,
+                    enabled_dimensions: dimensions,
+
+                    // Edition and feature flags
+                    edition: currentEdition,
+                    accounting_basis: editionDefaults.accounting_basis,
+                    enable_rev_rec: editionDefaults.enable_rev_rec,
+                    enable_contracts: editionDefaults.enable_contracts,
+                    enable_restrictions: editionDefaults.enable_restrictions,
+                    enable_donations: editionDefaults.enable_donations,
+                    enable_budgeting: editionDefaults.enable_budgeting
+                };
+
+                const response = await fetch(`/api/v1/admin/org-settings/by-key?organization_id=${currentOrgId}&scope=finance&key=finance_config`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${App.pb.authStore.token}`
+                    },
+                    body: JSON.stringify({ value: config })
+                });
+
+                if (!response.ok) throw new Error('Failed to save settings');
+
+                // Clear UI edition cache so other pages pick up the changes
+                if (window.UI && window.UI.clearEditionCache) {
+                    window.UI.clearEditionCache(currentOrgId);
+                }
+
+                App.showNotification('Finance settings saved!', 'success');
+            } catch (err) {
+                console.error('Failed to save settings:', err);
+                App.showNotification('Failed to save settings', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Settings';
+            }
+        }
+    </script>
+</body>
+</html>

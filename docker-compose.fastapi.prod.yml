@@ -1,0 +1,77 @@
+# FastAPI + PostgreSQL Production configuration
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: orgmeet-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-orgmeet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-orgmeet}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-orgmeet} -d ${POSTGRES_DB:-orgmeet}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - orgmeet
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: orgmeet-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-orgmeet}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-orgmeet}
+      - DATABASE_URL_SYNC=postgresql://${POSTGRES_USER:-orgmeet}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-orgmeet}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - APP_ENV=production
+      - DEBUG=false
+      - CORS_ORIGINS=${CORS_ORIGINS:-["https://yourdomain.com"]}
+      - JITSI_DOMAIN=${JITSI_DOMAIN:-meet.jit.si}
+      - SITE_URL=${SITE_URL:?SITE_URL is required}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_TLS=${SMTP_TLS:-true}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_SENDER=${SMTP_SENDER:-noreply@yourdomain.com}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - orgmeet
+
+  # Nginx Frontend
+  frontend:
+    image: nginx:1.27-alpine
+    container_name: orgmeet-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.fastapi.prod.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - orgmeet
+
+volumes:
+  postgres_data:
+
+networks:
+  orgmeet:
+    driver: bridge

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=3"></script>
+    <script src="/js/api.js?v=3"></script>
+    <script src="/js/app.js?v=8"></script>
+    <script src="/js/layout.js?v=1"></script>
+    <script src="/js/dashboard_metrics.js?v=1"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/theme.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="app-shell">
+    <!-- Header - Rendered by Layout.js -->
+    <header class="app-header"></header>
+
+    <!-- Module Navigation (hidden for dashboard - it's the home page) -->
+    <nav class="module-nav"></nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <div class="app-main-inner">
+            <!-- Hidden org selector for test compatibility - org selection is in header -->
+            <select id="org-selector" data-testid="org-selector" class="hidden">
+                <option value="">Loading organizations...</option>
+            </select>
+
+            <!-- Page Header -->
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1 class="page-title">Dashboard</h1>
+                    <p class="page-description" id="welcome-message">Track the key metrics that matter to your organization.</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="/pages/organizations.html?new=1" class="btn btn-secondary" style="padding: 0.75rem 1.25rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                        </svg>
+                        New Organization
+                    </a>
+                    <a href="/pages/meetings.html?new=1" class="btn btn-primary" style="padding: 0.75rem 1.25rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        New Meeting
+                    </a>
+                </div>
+            </div>
+
+            <!-- No Organizations State -->
+            <div id="no-orgs-state" class="hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" class="text-blue-600">
+                            <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to OrgMeet!</h2>
+                    <p class="text-gray-500 mb-8 max-w-md mx-auto">Create your first organization to get started with meetings, membership tracking, and more.</p>
+                    <a href="/pages/organizations.html?new=1" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Create Your First Organization
+                    </a>
+                </div>
+            </div>
+
+            <!-- Dashboard Content (hidden when no orgs) -->
+            <div id="dashboard-content" class="hidden">
+                <!-- Metrics Section - Primary Dashboard Content -->
+                <div id="metrics-section" class="mb-8" data-testid="metrics-section">
+                    <!-- Populated by DashboardMetrics.js -->
+                    <div class="flex items-center justify-center py-12 text-gray-400">
+                        <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                        </svg>
+                        Loading metrics...
+                    </div>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600">
+                                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900" id="stat-meetings">0</p>
+                                <p class="text-sm text-gray-500">Upcoming</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900" id="stat-members">0</p>
+                                <p class="text-sm text-gray-500">Active Members</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600">
+                                    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900" id="stat-donations">$0</p>
+                                <p class="text-sm text-gray-500">This Month</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-orange-600">
+                                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900" id="stat-projects">0</p>
+                                <p class="text-sm text-gray-500">Active Projects</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Grid -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Upcoming Meetings -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600">
+                                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                                    </svg>
+                                </div>
+                                <h2 class="font-semibold text-gray-900">Upcoming Meetings</h2>
+                            </div>
+                            <a href="/pages/meetings.html" class="text-sm text-blue-600 font-medium hover:text-blue-700 hover:underline">View all</a>
+                        </div>
+                        <div class="p-4" id="upcoming-meetings">
+                            <div class="flex items-center justify-center py-12 text-gray-400">
+                                <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                </svg>
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Members -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600">
+                                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                    </svg>
+                                </div>
+                                <h2 class="font-semibold text-gray-900">Recent Members</h2>
+                            </div>
+                            <a href="/pages/members.html" class="text-sm text-blue-600 font-medium hover:text-blue-700 hover:underline">View all</a>
+                        </div>
+                        <div class="p-4" id="recent-members">
+                            <div class="flex items-center justify-center py-12 text-gray-400">
+                                <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                </svg>
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Projects -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-orange-600">
+                                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                                    </svg>
+                                </div>
+                                <h2 class="font-semibold text-gray-900">Active Projects</h2>
+                            </div>
+                            <a href="/pages/projects.html" class="text-sm text-blue-600 font-medium hover:text-blue-700 hover:underline">View all</a>
+                        </div>
+                        <div class="p-4" id="active-projects">
+                            <div class="flex items-center justify-center py-12 text-gray-400">
+                                <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                </svg>
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Finance Overview -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600">
+                                        <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                                    </svg>
+                                </div>
+                                <h2 class="font-semibold text-gray-900">Finance Overview</h2>
+                            </div>
+                            <a href="/pages/finance_donations.html" class="text-sm text-blue-600 font-medium hover:text-blue-700 hover:underline">View all</a>
+                        </div>
+                        <div class="p-4" id="finance-overview">
+                            <div class="flex items-center justify-center py-12 text-gray-400">
+                                <svg class="animate-spin mr-3" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                </svg>
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CRM Pipeline Section -->
+                <div id="crm-section" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 mt-6 hover:shadow-lg transition-shadow">
+                    <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-indigo-600">
+                                    <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Sales Pipeline</h2>
+                        </div>
+                        <a href="/pages/crm_opportunities.html" class="text-sm text-blue-600 font-medium hover:text-blue-700 hover:underline">View Pipeline</a>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-indigo-50 rounded-xl p-4">
+                                <p class="text-sm text-indigo-600 font-medium">Open Opportunities</p>
+                                <p class="text-2xl font-bold text-indigo-700" id="crm-open-opps">0</p>
+                            </div>
+                            <div class="bg-green-50 rounded-xl p-4">
+                                <p class="text-sm text-green-600 font-medium">Pipeline Value</p>
+                                <p class="text-2xl font-bold text-green-700" id="crm-pipeline-value">$0</p>
+                            </div>
+                            <div class="bg-orange-50 rounded-xl p-4">
+                                <p class="text-sm text-orange-600 font-medium">Expected This Month</p>
+                                <p class="text-2xl font-bold text-orange-700" id="crm-expected-this-month">$0</p>
+                            </div>
+                        </div>
+                        <div id="crm-recent-opps">
+                            <!-- Recent opportunities will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mt-6 hover:shadow-lg transition-shadow">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-indigo-600">
+                                    <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Quick Actions</h2>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <a href="/pages/meetings.html?new=1" class="group flex flex-col items-center gap-3 p-6 bg-gray-50 rounded-xl hover:bg-blue-600 transition-all duration-200">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:bg-blue-500 transition-colors">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-600 group-hover:text-white transition-colors">
+                                        <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                                    </svg>
+                                </div>
+                                <span class="font-medium text-gray-900 group-hover:text-white transition-colors">Start Meeting</span>
+                            </a>
+                            <a href="/pages/members.html?new=1" class="group flex flex-col items-center gap-3 p-6 bg-gray-50 rounded-xl hover:bg-blue-600 transition-all duration-200">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:bg-blue-500 transition-colors">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-600 group-hover:text-white transition-colors">
+                                        <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                </div>
+                                <span class="font-medium text-gray-900 group-hover:text-white transition-colors">Add Member</span>
+                            </a>
+                            <a href="/pages/projects.html?new=1" class="group flex flex-col items-center gap-3 p-6 bg-gray-50 rounded-xl hover:bg-blue-600 transition-all duration-200">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:bg-blue-500 transition-colors">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-600 group-hover:text-white transition-colors">
+                                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                                    </svg>
+                                </div>
+                                <span class="font-medium text-gray-900 group-hover:text-white transition-colors">New Project</span>
+                            </a>
+                            <a href="/pages/finance_donations.html?new=1" class="group flex flex-col items-center gap-3 p-6 bg-gray-50 rounded-xl hover:bg-blue-600 transition-all duration-200">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:bg-blue-500 transition-colors">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-600 group-hover:text-white transition-colors">
+                                        <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                                    </svg>
+                                </div>
+                                <span class="font-medium text-gray-900 group-hover:text-white transition-colors">Record Donation</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+    </footer>
+
+    <script>
+        let currentOrgId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+
+            if (!App.requireAuth()) return;
+
+            // Initialize Layout system (dashboard module)
+            Layout.init({ module: 'dashboard' });
+
+            const user = App.getUser();
+            // Keep description as is, or update with user name if preferred
+            // document.getElementById('welcome-message').textContent = `Welcome back, ${user?.name || 'User'}`;
+
+            // Load organizations for selector
+            await loadOrganizations();
+
+            // Listen for org changes from Layout
+            window.addEventListener('orgchange', async (e) => {
+                if (e.detail.orgId) {
+                    currentOrgId = e.detail.orgId;
+                    document.getElementById('org-selector').value = e.detail.orgId;
+                    loadDashboardData();
+                    // Initialize metrics for the org
+                    await DashboardMetrics.init(e.detail.orgId);
+                }
+            });
+        });
+
+        async function loadOrganizations() {
+            try {
+                const response = await API.organizations.list();
+                const organizations = response.items || response;
+                const selector = document.getElementById('org-selector');
+
+                if (organizations.length === 0) {
+                    // Show no orgs state
+                    document.getElementById('no-orgs-state').classList.remove('hidden');
+                    document.getElementById('dashboard-content').classList.add('hidden');
+                    selector.innerHTML = '<option value="">No organizations</option>';
+                    return;
+                }
+
+                // Populate selector
+                selector.innerHTML = organizations.map(org =>
+                    `<option value="${org.id}">${org.name}</option>`
+                ).join('');
+
+                // Get saved org or use first one
+                const savedOrgId = API.org.getCurrentId();
+                if (savedOrgId && organizations.find(o => o.id === savedOrgId)) {
+                    selector.value = savedOrgId;
+                    currentOrgId = savedOrgId;
+                } else {
+                    currentOrgId = organizations[0].id;
+                    API.org.setCurrentId(currentOrgId);
+                }
+
+                // Show dashboard and load data
+                document.getElementById('no-orgs-state').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+
+                // Add change listener
+                selector.addEventListener('change', async (e) => {
+                    currentOrgId = e.target.value;
+                    API.org.setCurrentId(currentOrgId);
+                    await loadDashboardData();
+                    await DashboardMetrics.init(currentOrgId);
+                });
+
+                await loadDashboardData();
+                // Initialize metrics for current org
+                await DashboardMetrics.init(currentOrgId);
+
+            } catch (error) {
+                console.error('Error loading organizations:', error);
+                UI.showError('Failed to load organizations');
+            }
+        }
+
+        async function loadDashboardData() {
+            if (!currentOrgId) return;
+
+            try {
+                const summary = await API.dashboard.getSummary(currentOrgId);
+
+                // Update stats
+                document.getElementById('stat-meetings').textContent = summary.total_scheduled_meetings || 0;
+                document.getElementById('stat-members').textContent = summary.membership?.total_active || 0;
+                document.getElementById('stat-donations').textContent = formatCurrency(summary.finance?.donations_this_month || 0, summary.finance?.currency || 'USD');
+                document.getElementById('stat-projects').textContent = summary.projects?.total_active || 0;
+
+                // Render upcoming meetings
+                renderUpcomingMeetings(summary.upcoming_meetings || []);
+
+                // Render recent members
+                renderRecentMembers(summary.membership?.recent_members || []);
+
+                // Render active projects
+                renderActiveProjects(summary.projects?.active_projects || []);
+
+                // Render finance overview
+                renderFinanceOverview(summary.finance || {});
+
+                // Render CRM section
+                renderCRMSection(summary.crm);
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                UI.showError('Failed to load dashboard data');
+            }
+        }
+
+        function formatCurrency(amount, currency = 'USD') {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currency
+            }).format(amount);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Not set';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+
+        function getStatusBadgeClass(status) {
+            const classes = {
+                scheduled: 'bg-blue-100 text-blue-700',
+                in_progress: 'bg-green-100 text-green-700',
+                completed: 'bg-gray-100 text-gray-700',
+                cancelled: 'bg-red-100 text-red-700',
+                active: 'bg-green-100 text-green-700',
+                pending: 'bg-yellow-100 text-yellow-700',
+                inactive: 'bg-gray-100 text-gray-700',
+                planned: 'bg-blue-100 text-blue-700',
+                on_hold: 'bg-orange-100 text-orange-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        }
+
+        function renderUpcomingMeetings(meetings) {
+            const container = document.getElementById('upcoming-meetings');
+
+            if (meetings.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-400">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No upcoming meetings</p>
+                        <a href="/pages/meetings.html?new=1" class="text-sm text-blue-600 font-medium hover:underline mt-2 inline-block">Schedule one</a>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = meetings.map(meeting => `
+                <a href="/pages/meeting.html?id=${meeting.id}" class="flex items-center justify-between py-4 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0 group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="text-blue-600">
+                                <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">${meeting.title}</h3>
+                            <p class="text-sm text-gray-500">${formatDate(meeting.start_time)}${meeting.committee_name ? ' - ' + meeting.committee_name : ''}</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(meeting.status)}">${meeting.status.replace('_', ' ')}</span>
+                </a>
+            `).join('');
+        }
+
+        function renderRecentMembers(members) {
+            const container = document.getElementById('recent-members');
+
+            if (members.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-400">
+                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No members yet</p>
+                        <a href="/pages/members.html?new=1" class="text-sm text-blue-600 font-medium hover:underline mt-2 inline-block">Add one</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const colors = ['bg-blue-600', 'bg-purple-600', 'bg-green-600', 'bg-orange-500', 'bg-pink-600'];
+            container.innerHTML = members.map((member, i) => `
+                <div class="flex items-center gap-4 py-4 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
+                    <div class="w-10 h-10 ${colors[i % colors.length]} text-white rounded-xl flex items-center justify-center font-bold text-sm">
+                        ${member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-medium text-gray-900">${member.name}</h3>
+                        <p class="text-sm text-gray-500">${member.joined ? 'Joined ' + new Date(member.joined).toLocaleDateString() : 'Recently added'}</p>
+                    </div>
+                    <span class="px-2.5 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(member.status)}">${member.status}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderActiveProjects(projects) {
+            const container = document.getElementById('active-projects');
+
+            if (projects.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-gray-400">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">No active projects</p>
+                        <a href="/pages/projects.html?new=1" class="text-sm text-blue-600 font-medium hover:underline mt-2 inline-block">Start one</a>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = projects.map(project => `
+                <div class="flex items-center justify-between py-4 px-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="text-orange-600">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">${project.name}</h3>
+                            <p class="text-sm text-gray-500">${project.start_date ? 'Started ' + new Date(project.start_date).toLocaleDateString() : 'In progress'}</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(project.status)}">${project.status}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderFinanceOverview(finance) {
+            const container = document.getElementById('finance-overview');
+            const currency = finance.currency || 'USD';
+
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-4 bg-purple-50 rounded-xl">
+                        <div>
+                            <p class="text-sm text-purple-600 font-medium">Year-to-Date Donations</p>
+                            <p class="text-2xl font-bold text-purple-700">${formatCurrency(finance.donations_ytd || 0, currency)}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-purple-600">
+                                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    ${finance.recent_journal_entries && finance.recent_journal_entries.length > 0 ? `
+                        <div class="pt-2">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Recent Journal Entries</h4>
+                            ${finance.recent_journal_entries.slice(0, 3).map(entry => `
+                                <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">${entry.description}</p>
+                                        <p class="text-xs text-gray-500">${entry.entry_date ? new Date(entry.entry_date).toLocaleDateString() : ''}</p>
+                                    </div>
+                                    <span class="px-2 py-0.5 text-xs font-medium rounded-full ${getStatusBadgeClass(entry.status)}">${entry.status}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="text-center py-4 text-gray-500 text-sm">
+                            <p>No recent journal entries</p>
+                            <a href="/pages/finance_journal.html" class="text-blue-600 hover:underline">Go to Journal</a>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function renderCRMSection(crm) {
+            const section = document.getElementById('crm-section');
+
+            if (!crm) {
+                section.classList.add('hidden');
+                return;
+            }
+
+            section.classList.remove('hidden');
+
+            const currency = crm.currency || 'USD';
+            document.getElementById('crm-open-opps').textContent = crm.open_opportunities || 0;
+            document.getElementById('crm-pipeline-value').textContent = formatCurrency(crm.total_pipeline_value || 0, currency);
+            document.getElementById('crm-expected-this-month').textContent = formatCurrency(crm.expected_revenue_this_month || 0, currency);
+
+            const recentOppsContainer = document.getElementById('crm-recent-opps');
+            const recentOpps = crm.recent_opportunities || [];
+
+            if (recentOpps.length === 0) {
+                recentOppsContainer.innerHTML = `
+                    <div class="text-center py-4 text-gray-500 text-sm">
+                        <p>No opportunities yet</p>
+                        <a href="/pages/crm_opportunities.html" class="text-blue-600 hover:underline">Create one</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const stageColors = {
+                prospecting: 'bg-gray-100 text-gray-700',
+                qualification: 'bg-blue-100 text-blue-700',
+                proposal_made: 'bg-yellow-100 text-yellow-700',
+                negotiation: 'bg-purple-100 text-purple-700',
+                won: 'bg-green-100 text-green-700',
+                lost: 'bg-red-100 text-red-700'
+            };
+
+            recentOppsContainer.innerHTML = `
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Recent Opportunities</h4>
+                ${recentOpps.map(opp => `
+                    <a href="/pages/crm_opportunity_detail.html?id=${opp.id}&org=${currentOrgId}" class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition-colors">
+                        <div>
+                            <p class="font-medium text-gray-900">${opp.title}</p>
+                            ${opp.amount ? `<p class="text-sm text-green-600">${formatCurrency(opp.amount, currency)}</p>` : ''}
+                        </div>
+                        <span class="px-2.5 py-1 text-xs font-medium rounded-full ${stageColors[opp.stage] || 'bg-gray-100 text-gray-700'}">${(opp.stage || '').replace(/_/g, ' ')}</span>
+                    </a>
+                `).join('')}
+            `;
+        }
+    </script>
+</body>
+</html>

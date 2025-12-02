@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting - OrgMeet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Meeting Layout -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-80 bg-white border-r border-gray-200 flex flex-col overflow-hidden shadow-sm">
+            <!-- Back Link & Meeting Info -->
+            <div class="p-5 border-b border-gray-100">
+                <a href="/pages/meetings.html" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors mb-5 group">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="group-hover:-translate-x-0.5 transition-transform">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                    Back to Meetings
+                </a>
+                <div id="meeting-info">
+                    <div class="animate-pulse space-y-3">
+                        <div class="h-5 bg-gray-200 rounded w-20"></div>
+                        <div class="h-6 bg-gray-200 rounded w-full"></div>
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quorum Status -->
+            <div id="quorum-status" class="p-5 border-b border-gray-100 hidden">
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-gray-700">Quorum Status</span>
+                        <span id="quorum-badge" class="badge">--</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div id="quorum-progress" class="bg-blue-500 h-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-600">
+                            <span id="quorum-present">0</span>/<span id="quorum-required">0</span>
+                        </span>
+                    </div>
+                    <button onclick="recalculateQuorum()" class="mt-3 text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline" id="recalc-quorum-btn" style="display: none;">
+                        Recalculate Quorum
+                    </button>
+                </div>
+            </div>
+
+            <!-- Meeting Actions -->
+            <div class="p-5 border-b border-gray-100 space-y-3" id="meeting-actions">
+            </div>
+
+            <!-- Sidebar Navigation -->
+            <nav class="p-4 flex-1 overflow-y-auto">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Navigation</p>
+                <button onclick="showTab('agenda')" class="sidebar-nav-item w-full active" data-tab="agenda">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                    </svg>
+                    <span>Agenda</span>
+                    <span class="ml-auto text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium" id="agenda-count">0</span>
+                </button>
+                <button onclick="showTab('motions')" class="sidebar-nav-item w-full" data-tab="motions">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M18 13h-.68l-2 2h1.91L19 17H5l1.78-2h2.05l-2-2H6l-3 3v4c0 1.1.89 2 1.99 2H19c1.1 0 2-.89 2-2v-4l-3-3z"/>
+                    </svg>
+                    <span>Motions</span>
+                    <span class="ml-auto text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium" id="motions-count">0</span>
+                </button>
+                <button onclick="showTab('polls')" class="sidebar-nav-item w-full" data-tab="polls">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    <span>Polls</span>
+                    <span class="ml-auto text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium" id="polls-count">0</span>
+                </button>
+                <button onclick="showTab('participants')" class="sidebar-nav-item w-full" data-tab="participants">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                    <span>Participants</span>
+                    <span class="ml-auto text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium" id="participants-count">0</span>
+                </button>
+                <button onclick="showTab('minutes')" class="sidebar-nav-item w-full" data-tab="minutes">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                    </svg>
+                    <span>Minutes</span>
+                </button>
+                <button onclick="showTab('documents')" class="sidebar-nav-item w-full" data-tab="documents">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                    </svg>
+                    <span>Documents</span>
+                    <span class="ml-auto text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium" id="documents-count">0</span>
+                </button>
+                <button onclick="showTab('recordings')" class="sidebar-nav-item w-full" data-tab="recordings">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M18 10.48V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.48l4 3.98v-11l-4 3.98zM16 18H4V6h12v12zm-7-9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                    <span>Recordings</span>
+                    <span class="ml-auto text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium" id="recordings-count">0</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+            <!-- Video Container -->
+            <div id="video-container" class="hidden bg-gray-900">
+                <div id="jitsi-container" class="jitsi-container"></div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="flex-1 overflow-y-auto p-8">
+                <!-- Agenda Tab -->
+                <div id="tab-agenda" class="tab-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-900">Agenda</h2>
+                            <p class="text-gray-500 mt-1">Meeting topics and schedule</p>
+                        </div>
+                        <button onclick="showAddAgendaModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            Add Item
+                        </button>
+                    </div>
+                    <div id="agenda-list">
+                        <div class="empty-state bg-white rounded-xl border border-gray-100 p-12">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                                <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                            </svg>
+                            <p class="text-gray-500">No agenda items yet</p>
+                            <p class="text-sm text-gray-400 mt-1">Add items to structure your meeting</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Motions Tab -->
+                <div id="tab-motions" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-900">Motions</h2>
+                            <p class="text-gray-500 mt-1">Proposals and formal decisions</p>
+                        </div>
+                        <button onclick="showAddMotionModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            Submit Motion
+                        </button>
+                    </div>
+                    <div id="motions-list">
+                        <div class="empty-state bg-white rounded-xl border border-gray-100 p-12">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                                <path d="M18 13h-.68l-2 2h1.91L19 17H5l1.78-2h2.05l-2-2H6l-3 3v4c0 1.1.89 2 1.99 2H19c1.1 0 2-.89 2-2v-4l-3-3z"/>
+                            </svg>
+                            <p class="text-gray-500">No motions submitted yet</p>
+                            <p class="text-sm text-gray-400 mt-1">Submit a motion to start the discussion</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Polls Tab -->
+                <div id="tab-polls" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-900">Polls & Voting</h2>
+                            <p class="text-gray-500 mt-1">Conduct votes and view results</p>
+                        </div>
+                        <button onclick="showAddPollModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            Create Poll
+                        </button>
+                    </div>
+                    <div id="polls-list">
+                        <div class="empty-state bg-white rounded-xl border border-gray-100 p-12">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                            </svg>
+                            <p class="text-gray-500">No polls created yet</p>
+                            <p class="text-sm text-gray-400 mt-1">Create a poll to gather votes</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Participants Tab -->
+                <div id="tab-participants" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-900">Participants</h2>
+                            <p class="text-gray-500 mt-1">Manage attendees and voting rights</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="sendInvitations()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl font-medium hover:bg-blue-100 transition-all" id="send-invites-btn">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                </svg>
+                                Send Invitations
+                            </button>
+                            <button onclick="showAddParticipantModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </svg>
+                                Add Participant
+                            </button>
+                        </div>
+                    </div>
+                    <div id="participants-list">
+                        <div class="empty-state bg-white rounded-xl border border-gray-100 p-12">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                            <p class="text-gray-500">No participants added yet</p>
+                            <p class="text-sm text-gray-400 mt-1">Add participants to track attendance and voting eligibility</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Minutes Tab -->
+                <div id="tab-minutes" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-900">Meeting Minutes</h2>
+                            <p class="text-gray-500 mt-1">Auto-generated meeting summary</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="aiGenerateSummary()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-all shadow-sm" id="ai-summary-btn" style="display: none;">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M21 11.18V9l-2 .4l-2.45-3.36l-1.31.5l.71 1.05l-.72.49l-.86-.68l-.51.73l.64.5l-1.44.98l1.14 1.71l-1.11 1.2l1.13 1.54l-1.29.76l.93.83l1.5-1.12l.4.7l1.31-.97l.86.48l-.66.96l1.29.5l2.32-3.21l2 .4zM21 18l-1.79-1.43l.73-1.18l-.55-.88l-1.17.72l-.37-.57l1.2-.87l-.68-.78l-1.25.92l-.48-.69l1.04-.73l-.28-1l-1.68 1.24l-.45-.75l-1.51 1l-.37-.62l1.22-.86l-.65-.62l-1.07.69l-.73-1.15l-1.75 1.2l-.53-.88l1.45-1.08l-.73-.73l-1.45 1.08l-.27-.87l1.5-1.12l-.6-.84L9 8.22l-.81-1.1L6 8.9l.4 1.08L5 11.03V21h16v-3z"/>
+                                </svg>
+                                AI Summary
+                            </button>
+                            <button onclick="generateMeetingMinutes()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm" id="generate-minutes-btn">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/>
+                                </svg>
+                                Generate Minutes
+                            </button>
+                            <button onclick="downloadMinutes()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm" id="download-minutes-btn" style="display: none;">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                                </svg>
+                                Download (.md)
+                            </button>
+                        </div>
+                    </div>
+                    <div id="minutes-content">
+                        <div class="empty-state bg-white rounded-xl border border-gray-100 p-12">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                            </svg>
+                            <p class="text-gray-500">No minutes generated yet</p>
+                            <p class="text-sm text-gray-400 mt-1">Click "Generate Minutes" after the meeting ends</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents Tab -->
+                <div id="tab-documents" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-900">Documents</h2>
+                            <p class="text-gray-500 mt-1">Files and attachments for this meeting</p>
+                        </div>
+                        <button onclick="showUploadDocumentModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm" data-require-role="member" id="upload-document-btn" data-testid="upload-document-btn">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                            </svg>
+                            Upload Document
+                        </button>
+                    </div>
+                    <div id="documents-list">
+                        <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                            </svg>
+                            <p class="text-gray-500">No documents uploaded yet</p>
+                            <p class="text-sm text-gray-400 mt-1">Upload meeting documents, presentations, or supporting files</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recordings Tab -->
+                <div id="tab-recordings" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-900">Recordings</h2>
+                            <p class="text-gray-500 mt-1">Video and audio recordings of this meeting</p>
+                        </div>
+                        <button onclick="showAddRecordingModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            Add Recording
+                        </button>
+                    </div>
+                    <div id="recordings-list">
+                        <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                                <path d="M18 10.48V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.48l4 3.98v-11l-4 3.98zM16 18H4V6h12v12zm-7-9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                            <p class="text-gray-500">No recordings available</p>
+                            <p class="text-sm text-gray-400 mt-1">Add a recording link or upload a video file</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Agenda Item Modal -->
+    <div id="add-agenda-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Add Agenda Item</h3>
+                <button onclick="hideAddAgendaModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-agenda-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                    <input type="text" id="agenda-title" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Enter agenda item title" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="agenda-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="2" placeholder="Optional description"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                        <select id="agenda-type" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="topic">Topic</option>
+                            <option value="motion">Motion</option>
+                            <option value="election">Election</option>
+                            <option value="break">Break</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (min)</label>
+                        <input type="number" id="agenda-duration" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" min="0" value="15">
+                    </div>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddAgendaModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Add Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Motion Modal -->
+    <div id="add-motion-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Submit Motion</h3>
+                <button onclick="hideAddMotionModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-motion-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                    <input type="text" id="motion-title" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Motion title" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Motion Text *</label>
+                    <textarea id="motion-text" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="4" placeholder="Full text of the motion" required></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+                    <textarea id="motion-reason" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="2" placeholder="Why this motion is being proposed"></textarea>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddMotionModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Submit Motion</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Poll Modal -->
+    <div id="add-poll-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Create Poll</h3>
+                <button onclick="hideAddPollModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-poll-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Question *</label>
+                    <input type="text" id="poll-title" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="What would you like to vote on?" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Poll Type</label>
+                    <select id="poll-type" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        <option value="yes_no">Yes / No</option>
+                        <option value="yes_no_abstain">Yes / No / Abstain</option>
+                        <option value="multiple_choice">Multiple Choice</option>
+                    </select>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="poll-anonymous" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <div>
+                            <span class="font-medium text-gray-700">Anonymous voting</span>
+                            <p class="text-sm text-gray-500">Votes will not be attributed to participants</p>
+                        </div>
+                    </label>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddPollModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Create Poll</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Participant Modal -->
+    <div id="add-participant-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Add Participant</h3>
+                <button onclick="hideAddParticipantModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-participant-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">User Email *</label>
+                    <input type="email" id="participant-email" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required placeholder="user@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select id="participant-role" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        <option value="member">Member</option>
+                        <option value="moderator">Moderator</option>
+                        <option value="admin">Admin</option>
+                        <option value="guest">Guest</option>
+                        <option value="observer">Observer</option>
+                    </select>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="participant-can-vote" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
+                        <div>
+                            <span class="font-medium text-gray-700">Can vote</span>
+                            <p class="text-sm text-gray-500">Allow this participant to vote in polls</p>
+                        </div>
+                    </label>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddParticipantModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Add Participant</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Motion Actions Modal -->
+    <div id="motion-actions-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-900 mb-6">Motion Actions</h3>
+            <div id="motion-action-content"></div>
+        </div>
+    </div>
+
+    <!-- Upload Document Modal -->
+    <div id="upload-document-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Upload Document</h3>
+                <button onclick="hideUploadDocumentModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="upload-document-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">File *</label>
+                    <input type="file" id="document-file" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp">
+                    <p class="text-xs text-gray-500 mt-1">PDF, Word, Excel, PowerPoint, images up to 50MB</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Document Name</label>
+                    <input type="text" id="document-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Optional - defaults to filename">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="document-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="2" placeholder="Optional description"></textarea>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideUploadDocumentModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Recording Modal -->
+    <div id="add-recording-modal" class="hidden modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Add Recording</h3>
+                <button onclick="hideAddRecordingModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-recording-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                    <input type="text" id="recording-title" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Recording title" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Provider</label>
+                    <select id="recording-provider" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="toggleRecordingFields()">
+                        <option value="youtube">YouTube</option>
+                        <option value="vimeo">Vimeo</option>
+                        <option value="zoom">Zoom</option>
+                        <option value="jitsi">Jitsi</option>
+                        <option value="local">Upload File</option>
+                        <option value="other">Other URL</option>
+                    </select>
+                </div>
+                <div id="recording-url-field">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Recording URL</label>
+                    <input type="url" id="recording-url" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="https://...">
+                </div>
+                <div id="recording-file-field" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Recording File</label>
+                    <input type="file" id="recording-file" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                           accept="video/mp4,video/webm,video/quicktime,audio/mpeg,audio/wav,audio/ogg">
+                    <p class="text-xs text-gray-500 mt-1">MP4, WebM, MOV, MP3, WAV up to 5GB</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="recording-description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" rows="2" placeholder="Optional description"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
+                    <select id="recording-visibility" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        <option value="members">Members Only</option>
+                        <option value="private">Private (Admins Only)</option>
+                        <option value="public">Public</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideAddRecordingModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Add Recording</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Assistant Modal -->
+    <div id="ai-assistant-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600">
+                            <path d="M21 11.18V9l-2 .4l-2.45-3.36l-1.31.5l.71 1.05l-.72.49l-.86-.68l-.51.73l.64.5l-1.44.98l1.14 1.71l-1.11 1.2l1.13 1.54l-1.29.76l.93.83l1.5-1.12l.4.7l1.31-.97l.86.48l-.66.96l1.29.5l2.32-3.21l2 .4z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">AI Meeting Assistant</h3>
+                </div>
+                <button onclick="hideAIAssistantModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="ai-assistant-content" class="space-y-4">
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <p class="text-sm text-gray-600">Choose an AI action or enter a custom prompt:</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="aiAction('summary')" class="p-4 bg-white border border-gray-200 rounded-xl text-left hover:border-purple-300 hover:bg-purple-50 transition-all">
+                        <div class="font-medium text-gray-900 mb-1">Generate Summary</div>
+                        <div class="text-sm text-gray-500">Create an executive summary of this meeting</div>
+                    </button>
+                    <button onclick="aiAction('agenda')" class="p-4 bg-white border border-gray-200 rounded-xl text-left hover:border-purple-300 hover:bg-purple-50 transition-all">
+                        <div class="font-medium text-gray-900 mb-1">Suggest Agenda</div>
+                        <div class="text-sm text-gray-500">Get AI suggestions for agenda items</div>
+                    </button>
+                    <button onclick="aiAction('motion')" class="p-4 bg-white border border-gray-200 rounded-xl text-left hover:border-purple-300 hover:bg-purple-50 transition-all">
+                        <div class="font-medium text-gray-900 mb-1">Draft Motion</div>
+                        <div class="text-sm text-gray-500">Help draft a formal motion</div>
+                    </button>
+                    <button onclick="aiAction('custom')" class="p-4 bg-white border border-gray-200 rounded-xl text-left hover:border-purple-300 hover:bg-purple-50 transition-all">
+                        <div class="font-medium text-gray-900 mb-1">Custom Prompt</div>
+                        <div class="text-sm text-gray-500">Ask the AI anything about this meeting</div>
+                    </button>
+                </div>
+                <div id="ai-custom-prompt" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Your Prompt</label>
+                    <textarea id="ai-prompt-input" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all" rows="3" placeholder="Ask the AI anything..."></textarea>
+                    <button onclick="sendAIPrompt()" class="mt-3 px-5 py-2.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors shadow-sm">Send</button>
+                </div>
+                <div id="ai-response" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">AI Response</label>
+                    <div id="ai-response-content" class="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
+                </div>
+                <div id="ai-loading" class="hidden text-center py-8">
+                    <svg class="animate-spin mx-auto mb-3" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round" class="text-purple-600"/>
+                    </svg>
+                    <p class="text-gray-500">AI is thinking...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jitsi API -->
+    <script src="https://meet.jit.si/external_api.js"></script>
+
+    <script>
+        let meeting = null;
+        let jitsiApi = null;
+        let currentTab = 'agenda';
+        let participants = [];
+        let meetingMinutes = null;
+        let organizationId = null;
+        let aiEnabled = false;
+        let documents = [];
+        let recordings = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+            if (!App.requireAuth()) return;
+
+            const meetingId = App.getUrlParam('id');
+            if (!meetingId) {
+                window.location.href = '/pages/meetings.html';
+                return;
+            }
+
+            await loadMeeting(meetingId);
+            await Promise.all([
+                loadAgendaItems(),
+                loadMotions(),
+                loadPolls(),
+                loadParticipants(),
+                loadMinutes(),
+                loadDocuments(),
+                loadRecordings(),
+                checkAIEnabled()
+            ]);
+
+            // Form handlers
+            document.getElementById('add-agenda-form').addEventListener('submit', handleAddAgendaItem);
+            document.getElementById('add-motion-form').addEventListener('submit', handleAddMotion);
+            document.getElementById('add-poll-form').addEventListener('submit', handleAddPoll);
+            document.getElementById('add-participant-form').addEventListener('submit', handleAddParticipant);
+            document.getElementById('upload-document-form').addEventListener('submit', handleUploadDocument);
+            document.getElementById('add-recording-form').addEventListener('submit', handleAddRecording);
+
+            // Apply role-based UI visibility
+            await applyRoleBasedVisibility();
+        });
+
+        async function applyRoleBasedVisibility() {
+            if (!organizationId) return;
+            const isMember = await API.roles.hasMinRole('member', organizationId);
+
+            // Upload button - requires member role
+            const uploadBtn = document.getElementById('upload-document-btn');
+            if (uploadBtn) {
+                uploadBtn.style.display = isMember ? '' : 'none';
+            }
+        }
+
+        async function loadMeeting(id) {
+            meeting = await App.getMeeting(id);
+            if (!meeting) {
+                window.location.href = '/pages/meetings.html';
+                return;
+            }
+
+            // Get organization ID from meeting or committee
+            if (meeting.organization_id) {
+                organizationId = meeting.organization_id;
+            } else if (meeting.expand?.committee?.organization) {
+                organizationId = meeting.expand.committee.organization;
+            } else if (meeting.committee_id) {
+                try {
+                    const committee = await API.governance.committees.get(meeting.committee_id);
+                    organizationId = committee?.organization_id;
+                } catch (e) {
+                    console.error('Failed to get committee:', e);
+                }
+            }
+
+            document.title = `${meeting.title} - OrgMeet`;
+
+            document.getElementById('meeting-info').innerHTML = `
+                <span class="badge ${App.getStatusBadgeClass(meeting.status)} mb-3">${meeting.status.replace('_', ' ')}</span>
+                <h1 class="text-lg font-bold text-gray-900 mb-1">${meeting.title}</h1>
+                <p class="text-sm text-gray-500 flex items-center gap-1.5">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                    </svg>
+                    ${App.formatDate(meeting.start_time)}
+                </p>
+                ${meeting.meeting_type ? `<p class="text-xs text-gray-400 mt-2 bg-gray-50 inline-block px-2 py-1 rounded">${meeting.meeting_type}</p>` : ''}
+                ${meeting.description ? `<p class="text-sm text-gray-600 mt-4 leading-relaxed">${meeting.description}</p>` : ''}
+            `;
+
+            // Quorum status
+            updateQuorumDisplay();
+
+            // Meeting actions
+            let actionsHtml = '';
+
+            // ICS Calendar button
+            actionsHtml += `
+                <button onclick="downloadCalendar()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 text-gray-700 rounded-xl font-medium hover:bg-gray-100 transition-colors border border-gray-200">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                    </svg>
+                    <span>Add to Calendar</span>
+                </button>
+            `;
+
+            if (meeting.jitsi_room) {
+                actionsHtml += `
+                    <button id="video-btn" onclick="toggleVideo()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors shadow-sm">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                        </svg>
+                        <span>Join Video</span>
+                    </button>
+                `;
+            }
+
+            if (meeting.status === 'scheduled') {
+                actionsHtml += `<button onclick="startMeeting()" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">Start Meeting</button>`;
+            } else if (meeting.status === 'in_progress') {
+                actionsHtml += `<button onclick="endMeeting()" class="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors">End Meeting</button>`;
+            }
+
+            document.getElementById('meeting-actions').innerHTML = actionsHtml;
+        }
+
+        function updateQuorumDisplay() {
+            const quorumSection = document.getElementById('quorum-status');
+            if (meeting.quorum_required && meeting.quorum_required > 0) {
+                quorumSection.classList.remove('hidden');
+
+                // Use attendance_status with is_present fallback for backward compatibility
+                const presentCount = participants.filter(p => (p.attendance_status === 'present' || p.is_present) && p.can_vote).length;
+                const quorumMet = presentCount >= meeting.quorum_required;
+                const percentage = Math.min((presentCount / meeting.quorum_required) * 100, 100);
+
+                document.getElementById('quorum-present').textContent = presentCount;
+                document.getElementById('quorum-required').textContent = meeting.quorum_required;
+                document.getElementById('quorum-progress').style.width = `${percentage}%`;
+
+                const badge = document.getElementById('quorum-badge');
+                const progressBar = document.getElementById('quorum-progress');
+                if (quorumMet) {
+                    badge.textContent = 'Met';
+                    badge.className = 'badge bg-green-100 text-green-700';
+                    progressBar.className = 'bg-green-500 h-full transition-all duration-500';
+                } else {
+                    badge.textContent = 'Not Met';
+                    badge.className = 'badge bg-red-100 text-red-700';
+                    progressBar.className = 'bg-red-500 h-full transition-all duration-500';
+                }
+
+                // Show recalculate button if meeting is in progress
+                if (meeting.status === 'in_progress') {
+                    document.getElementById('recalc-quorum-btn').style.display = 'block';
+                }
+            }
+        }
+
+        async function recalculateQuorum() {
+            const result = await App.recalculateQuorum(meeting.id);
+            if (result) {
+                meeting.quorum_met = result.quorum_met;
+                updateQuorumDisplay();
+                App.showNotification(result.quorum_met ? 'Quorum is met!' : 'Quorum not yet met', result.quorum_met ? 'success' : 'warning');
+            }
+        }
+
+        function downloadCalendar() {
+            App.downloadICS(meeting);
+        }
+
+        async function loadAgendaItems() {
+            const items = await App.getAgendaItems(meeting.id);
+            document.getElementById('agenda-count').textContent = items.length;
+
+            const container = document.getElementById('agenda-list');
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                        </svg>
+                        <p class="text-gray-500">No agenda items yet</p>
+                        <p class="text-sm text-gray-400 mt-1">Add items to structure your meeting</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = items.map((item, i) => `
+                    <div class="agenda-item ${item.status === 'in_progress' ? 'active' : ''}">
+                        <span class="agenda-item-order">${i + 1}</span>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-medium text-gray-900">${item.title}</h3>
+                            ${item.duration_minutes ? `<span class="text-xs text-gray-500">${item.duration_minutes} min</span>` : ''}
+                        </div>
+                        <span class="badge ${App.getStatusBadgeClass(item.status)}">${item.status.replace('_', ' ')}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function loadMotions() {
+            const motions = await App.getMotions(meeting.id);
+            document.getElementById('motions-count').textContent = motions.length;
+
+            const container = document.getElementById('motions-list');
+            if (motions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                            <path d="M18 13h-.68l-2 2h1.91L19 17H5l1.78-2h2.05l-2-2H6l-3 3v4c0 1.1.89 2 1.99 2H19c1.1 0 2-.89 2-2v-4l-3-3z"/>
+                        </svg>
+                        <p class="text-gray-500">No motions submitted yet</p>
+                        <p class="text-sm text-gray-400 mt-1">Submit a motion to start the discussion</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = motions.map(motion => {
+                    const transitions = App.getMotionTransitions(motion.workflow_state);
+                    const transitionButtons = transitions.map(t => `
+                        <button onclick="transitionMotion('${motion.id}', '${t}')" class="px-3 py-1.5 text-xs ${getTransitionButtonClass(t)} rounded-lg font-medium hover:opacity-90 transition-opacity">
+                            ${formatTransitionLabel(t)}
+                        </button>
+                    `).join('');
+
+                    return `
+                        <div class="bg-white rounded-xl border border-gray-100 p-5 mb-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="badge ${App.getStatusBadgeClass(motion.workflow_state)}">${motion.workflow_state}</span>
+                                    ${motion.number ? `<span class="text-xs text-gray-400 font-medium">${motion.number}</span>` : ''}
+                                </div>
+                                ${transitions.length > 0 ? `<div class="flex gap-2">${transitionButtons}</div>` : ''}
+                            </div>
+                            <h3 class="font-semibold text-gray-900 mb-2">${motion.title}</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed">${motion.text.slice(0, 150)}${motion.text.length > 150 ? '...' : ''}</p>
+                            ${motion.vote_result ? `
+                                <div class="mt-4 pt-4 border-t border-gray-100">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Vote Result</span>
+                                    <div class="flex gap-4 mt-2">
+                                        <span class="inline-flex items-center gap-1.5 text-sm font-medium text-green-600">
+                                            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                            Yes: ${motion.vote_result.yes || 0}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
+                                            <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                            No: ${motion.vote_result.no || 0}
+                                        </span>
+                                        ${motion.vote_result.abstain !== undefined ? `
+                                            <span class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500">
+                                                <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                                                Abstain: ${motion.vote_result.abstain}
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function getTransitionButtonClass(state) {
+            const classes = {
+                'submitted': 'bg-blue-100 text-blue-700',
+                'screening': 'bg-yellow-100 text-yellow-700',
+                'discussion': 'bg-purple-100 text-purple-700',
+                'voting': 'bg-orange-100 text-orange-700',
+                'accepted': 'bg-green-100 text-green-700',
+                'rejected': 'bg-red-100 text-red-700',
+                'withdrawn': 'bg-gray-100 text-gray-700',
+                'tabled': 'bg-gray-100 text-gray-700'
+            };
+            return classes[state] || 'bg-gray-100 text-gray-700';
+        }
+
+        function formatTransitionLabel(state) {
+            const labels = {
+                'submitted': 'Submit',
+                'screening': 'Screen',
+                'discussion': 'Discuss',
+                'voting': 'Vote',
+                'accepted': 'Accept',
+                'rejected': 'Reject',
+                'withdrawn': 'Withdraw',
+                'tabled': 'Table'
+            };
+            return labels[state] || state;
+        }
+
+        async function transitionMotion(motionId, newState) {
+            const result = await App.transitionMotion(motionId, newState);
+            if (result) {
+                App.showNotification(`Motion moved to ${newState}`, 'success');
+                await loadMotions();
+            }
+        }
+
+        async function loadPolls() {
+            const polls = await App.getPolls(meeting.id);
+            document.getElementById('polls-count').textContent = polls.length;
+
+            const container = document.getElementById('polls-list');
+            if (polls.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                        </svg>
+                        <p class="text-gray-500">No polls created yet</p>
+                        <p class="text-sm text-gray-400 mt-1">Create a poll to gather votes</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = polls.map(poll => {
+                    let actionButtons = '';
+                    if (poll.status === 'draft') {
+                        actionButtons = `<button onclick="openPoll('${poll.id}')" class="px-4 py-2 text-sm bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-colors">Open Voting</button>`;
+                    } else if (poll.status === 'open') {
+                        actionButtons = `<button onclick="closePoll('${poll.id}')" class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-colors">Close Voting</button>`;
+                    }
+
+                    return `
+                        <div class="bg-white rounded-xl border border-gray-100 p-5 mb-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="badge ${App.getStatusBadgeClass(poll.status)}">${poll.status}</span>
+                                    <span class="text-xs text-gray-400 font-medium">${poll.poll_type.replace('_', '/')}</span>
+                                    ${poll.poll_category ? `<span class="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full font-medium">${poll.poll_category}</span>` : ''}
+                                </div>
+                                ${actionButtons}
+                            </div>
+                            <h3 class="font-semibold text-gray-900 mb-3">${poll.title}</h3>
+                            ${poll.status === 'open' ? `
+                                <div class="flex gap-3 mt-4">
+                                    <button onclick="vote('${poll.id}', 'yes')" class="flex-1 px-4 py-3 bg-green-50 text-green-700 rounded-xl font-medium hover:bg-green-100 transition-colors border border-green-200">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="mx-auto mb-1">
+                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                        </svg>
+                                        Yes
+                                    </button>
+                                    <button onclick="vote('${poll.id}', 'no')" class="flex-1 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-medium hover:bg-red-100 transition-colors border border-red-200">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="mx-auto mb-1">
+                                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                        </svg>
+                                        No
+                                    </button>
+                                    ${poll.poll_type === 'yes_no_abstain' ? `
+                                        <button onclick="vote('${poll.id}', 'abstain')" class="flex-1 px-4 py-3 bg-gray-50 text-gray-700 rounded-xl font-medium hover:bg-gray-100 transition-colors border border-gray-200">
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="mx-auto mb-1">
+                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                                            </svg>
+                                            Abstain
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            ${poll.status === 'closed' && poll.winning_option ? `
+                                <div class="mt-4 pt-4 border-t border-gray-100">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Result</span>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold ${poll.winning_option === 'yes' ? 'bg-green-100 text-green-700' : poll.winning_option === 'no' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}">
+                                            ${poll.winning_option.charAt(0).toUpperCase() + poll.winning_option.slice(1)}
+                                        </span>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function openPoll(pollId) {
+            const result = await App.openPoll(pollId);
+            if (result) {
+                App.showNotification('Poll opened for voting', 'success');
+                await loadPolls();
+            }
+        }
+
+        async function closePoll(pollId) {
+            const result = await App.closePoll(pollId);
+            if (result) {
+                App.showNotification('Poll closed', 'success');
+                await loadPolls();
+            }
+        }
+
+        async function loadParticipants() {
+            participants = await App.getParticipants(meeting.id);
+            document.getElementById('participants-count').textContent = participants.length;
+
+            const container = document.getElementById('participants-list');
+            if (participants.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                        <p class="text-gray-500">No participants added yet</p>
+                        <p class="text-sm text-gray-400 mt-1">Add participants to track attendance and voting eligibility</p>
+                    </div>
+                `;
+            } else {
+                const avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500'];
+                container.innerHTML = `
+                    <div class="grid gap-3">
+                        ${participants.map((p, i) => {
+                            const colorClass = avatarColors[i % avatarColors.length];
+                            return `
+                                <div class="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-full ${colorClass} flex items-center justify-center text-white font-semibold text-sm">
+                                            ${(p.expand?.user?.name || p.expand?.user?.email || '?').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-900">${p.expand?.user?.name || p.expand?.user?.email || 'Unknown'}</div>
+                                            <div class="text-sm text-gray-500 capitalize">${p.role}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        ${p.can_vote ? '<span class="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium border border-blue-100">Voter</span>' : ''}
+                                        <select onchange="updateParticipantStatus('${p.id}', this.value)" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                            <option value="invited" ${p.attendance_status === 'invited' ? 'selected' : ''}>Invited</option>
+                                            <option value="present" ${p.attendance_status === 'present' ? 'selected' : ''}>Present</option>
+                                            <option value="absent" ${p.attendance_status === 'absent' ? 'selected' : ''}>Absent</option>
+                                            <option value="excused" ${p.attendance_status === 'excused' ? 'selected' : ''}>Excused</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            // Update quorum display after loading participants
+            updateQuorumDisplay();
+        }
+
+        async function updateParticipantStatus(participantId, status) {
+            const result = await App.updateParticipant(participantId, { attendance_status: status });
+            if (result) {
+                const p = participants.find(p => p.id === participantId);
+                if (p) p.attendance_status = status;
+                updateQuorumDisplay();
+            }
+        }
+
+        async function loadMinutes() {
+            meetingMinutes = await App.getMeetingMinutes(meeting.id);
+            const container = document.getElementById('minutes-content');
+            const downloadBtn = document.getElementById('download-minutes-btn');
+            const generateBtn = document.getElementById('generate-minutes-btn');
+
+            if (meetingMinutes) {
+                downloadBtn.style.display = 'flex';
+                generateBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/>
+                    </svg>
+                    Regenerate
+                `;
+
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-5">
+                            <span class="badge ${meetingMinutes.status === 'final' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${meetingMinutes.status}</span>
+                            <span class="text-xs text-gray-500">Generated: ${App.formatDate(meetingMinutes.created)}</span>
+                        </div>
+                        ${meetingMinutes.summary ? `
+                            <div class="mb-5">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-2">Summary</h4>
+                                <p class="text-sm text-gray-600 leading-relaxed">${meetingMinutes.summary}</p>
+                            </div>
+                        ` : ''}
+                        ${meetingMinutes.decisions && meetingMinutes.decisions.length > 0 ? `
+                            <div class="mb-5">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">Decisions Made</h4>
+                                <ul class="space-y-2">
+                                    ${meetingMinutes.decisions.map(d => `
+                                        <li class="flex items-start gap-3 text-sm text-gray-600 bg-green-50 rounded-lg p-3">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="text-green-500 flex-shrink-0 mt-0.5">
+                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                            </svg>
+                                            <span>${d.title || d}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Full Minutes</h4>
+                            <pre class="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 p-5 rounded-xl leading-relaxed">${meetingMinutes.content}</pre>
+                        </div>
+                    </div>
+                `;
+            } else {
+                downloadBtn.style.display = 'none';
+                generateBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/>
+                    </svg>
+                    Generate Minutes
+                `;
+                container.innerHTML = `
+                    <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        </svg>
+                        <p class="text-gray-500">No minutes generated yet</p>
+                        <p class="text-sm text-gray-400 mt-1">Click "Generate Minutes" after the meeting ends</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function generateMeetingMinutes() {
+            const btn = document.getElementById('generate-minutes-btn');
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                </svg>
+                Generating...
+            `;
+
+            try {
+                meetingMinutes = await App.generateMinutes(meeting.id);
+                if (meetingMinutes) {
+                    App.showNotification('Minutes generated successfully', 'success');
+                    await loadMinutes();
+                }
+            } finally {
+                btn.disabled = false;
+                if (meetingMinutes) {
+                    btn.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/>
+                        </svg>
+                        Regenerate
+                    `;
+                } else {
+                    btn.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/>
+                        </svg>
+                        Generate Minutes
+                    `;
+                }
+            }
+        }
+
+        function downloadMinutes() {
+            if (meetingMinutes) {
+                App.downloadMinutesAsMarkdown(meetingMinutes, meeting);
+            }
+        }
+
+        async function sendInvitations() {
+            const btn = document.getElementById('send-invites-btn');
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                </svg>
+                Sending...
+            `;
+
+            try {
+                const result = await App.sendMeetingInvitations(meeting.id);
+                if (result) {
+                    App.showNotification(`Invitations sent to ${result.sent || 0} participants`, 'success');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                    </svg>
+                    Send Invitations
+                `;
+            }
+        }
+
+        function showTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+
+            document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
+                if (btn.dataset.tab === tab) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function toggleVideo() {
+            const container = document.getElementById('video-container');
+            const btn = document.getElementById('video-btn');
+
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/>
+                    </svg>
+                    <span>Leave Video</span>
+                `;
+                btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                btn.classList.add('bg-red-500', 'hover:bg-red-600');
+
+                const user = App.getUser();
+                jitsiApi = App.initJitsi('jitsi-container', meeting.jitsi_room, user?.name || user?.email);
+            } else {
+                container.classList.add('hidden');
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                    </svg>
+                    <span>Join Video</span>
+                `;
+                btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+
+                if (jitsiApi) {
+                    jitsiApi.dispose();
+                    jitsiApi = null;
+                }
+            }
+        }
+
+        async function startMeeting() {
+            if (await App.updateMeetingStatus(meeting.id, 'in_progress')) {
+                meeting.status = 'in_progress';
+                loadMeeting(meeting.id);
+            }
+        }
+
+        async function endMeeting() {
+            if (await App.updateMeetingStatus(meeting.id, 'completed')) {
+                meeting.status = 'completed';
+                if (jitsiApi) {
+                    jitsiApi.dispose();
+                    jitsiApi = null;
+                }
+                loadMeeting(meeting.id);
+            }
+        }
+
+        async function vote(pollId, value) {
+            await App.submitVote(pollId, { choice: value });
+            await loadPolls();
+        }
+
+        // Modal functions
+        function showAddAgendaModal() { document.getElementById('add-agenda-modal').classList.remove('hidden'); }
+        function hideAddAgendaModal() { document.getElementById('add-agenda-modal').classList.add('hidden'); }
+        function showAddMotionModal() { document.getElementById('add-motion-modal').classList.remove('hidden'); }
+        function hideAddMotionModal() { document.getElementById('add-motion-modal').classList.add('hidden'); }
+        function showAddPollModal() { document.getElementById('add-poll-modal').classList.remove('hidden'); }
+        function hideAddPollModal() { document.getElementById('add-poll-modal').classList.add('hidden'); }
+        function showAddParticipantModal() { document.getElementById('add-participant-modal').classList.remove('hidden'); }
+        function hideAddParticipantModal() { document.getElementById('add-participant-modal').classList.add('hidden'); }
+
+        async function handleAddAgendaItem(e) {
+            e.preventDefault();
+            const agendaItems = await App.getAgendaItems(meeting.id);
+            await App.createAgendaItem({
+                meeting: meeting.id,
+                title: document.getElementById('agenda-title').value,
+                description: document.getElementById('agenda-description').value,
+                item_type: document.getElementById('agenda-type').value,
+                duration_minutes: parseInt(document.getElementById('agenda-duration').value) || null,
+                order: agendaItems.length,
+                status: 'pending'
+            });
+            hideAddAgendaModal();
+            document.getElementById('add-agenda-form').reset();
+            await loadAgendaItems();
+        }
+
+        async function handleAddMotion(e) {
+            e.preventDefault();
+            await App.createMotion({
+                meeting: meeting.id,
+                title: document.getElementById('motion-title').value,
+                text: document.getElementById('motion-text').value,
+                reason: document.getElementById('motion-reason').value
+            });
+            hideAddMotionModal();
+            document.getElementById('add-motion-form').reset();
+            await loadMotions();
+        }
+
+        async function handleAddPoll(e) {
+            e.preventDefault();
+            await App.createPoll({
+                meeting: meeting.id,
+                title: document.getElementById('poll-title').value,
+                poll_type: document.getElementById('poll-type').value,
+                anonymous: document.getElementById('poll-anonymous').checked
+            });
+            hideAddPollModal();
+            document.getElementById('add-poll-form').reset();
+            await loadPolls();
+        }
+
+        async function handleAddParticipant(e) {
+            e.preventDefault();
+            const email = document.getElementById('participant-email').value;
+
+            // Look up user by email
+            try {
+                const users = await App.pb.collection('users').getList(1, 1, { filter: `email = "${email}"` });
+                if (users.items.length === 0) {
+                    App.showNotification('User not found with that email', 'error');
+                    return;
+                }
+
+                const userId = users.items[0].id;
+                await App.addParticipant({
+                    meeting: meeting.id,
+                    user: userId,
+                    role: document.getElementById('participant-role').value,
+                    can_vote: document.getElementById('participant-can-vote').checked,
+                    attendance_status: 'invited'
+                });
+
+                hideAddParticipantModal();
+                document.getElementById('add-participant-form').reset();
+                await loadParticipants();
+                App.showNotification('Participant added', 'success');
+            } catch (error) {
+                App.showNotification('Failed to add participant', 'error');
+            }
+        }
+
+        // ========================================
+        // Documents Functions
+        // ========================================
+
+        async function loadDocuments() {
+            if (!organizationId) return;
+            documents = await App.getFiles({ meeting: meeting.id });
+            document.getElementById('documents-count').textContent = documents.length;
+
+            const container = document.getElementById('documents-list');
+            const isAdmin = await API.roles.hasMinRole('admin', organizationId);
+            if (documents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                        </svg>
+                        <p class="text-gray-500">No documents uploaded yet</p>
+                        <p class="text-sm text-gray-400 mt-1">Upload meeting documents, presentations, or supporting files</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="grid gap-3">
+                        ${documents.map(doc => {
+                            const fileUrl = App.getFileUrl(doc, doc.file);
+                            const icon = getFileIcon(doc.file_type);
+                            return `
+                                <div class="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow" data-testid="document-item" data-document-id="${doc.id}">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg ${icon.bgColor} flex items-center justify-center">
+                                            ${icon.svg}
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-900" data-testid="document-name">${doc.name}</div>
+                                            <div class="text-sm text-gray-500">${App.formatFileSize(doc.file_size || 0)} • ${App.formatShortDate(doc.created)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <a href="${fileUrl}" target="_blank" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Download" data-testid="document-download">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                                            </svg>
+                                        </a>
+                                        ${isAdmin ? `<button onclick="deleteDocument('${doc.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete" data-testid="document-delete">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                            </svg>
+                                        </button>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function getFileIcon(fileType) {
+            const icons = {
+                document: { bgColor: 'bg-blue-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
+                spreadsheet: { bgColor: 'bg-green-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>' },
+                presentation: { bgColor: 'bg-orange-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-orange-600"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>' },
+                image: { bgColor: 'bg-purple-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>' },
+                other: { bgColor: 'bg-gray-100', svg: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-gray-600"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>' }
+            };
+            return icons[fileType] || icons.other;
+        }
+
+        async function handleUploadDocument(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('document-file');
+            if (!fileInput.files.length) return;
+
+            const result = await App.uploadFile(fileInput, {
+                name: document.getElementById('document-name').value || fileInput.files[0].name,
+                description: document.getElementById('document-description').value,
+                organization: organizationId,
+                meeting: meeting.id
+            });
+
+            if (result) {
+                hideUploadDocumentModal();
+                document.getElementById('upload-document-form').reset();
+                await loadDocuments();
+            }
+        }
+
+        async function deleteDocument(docId) {
+            if (!confirm('Are you sure you want to delete this document?')) return;
+            const result = await App.deleteFile(docId);
+            if (result) {
+                await loadDocuments();
+            }
+        }
+
+        function showUploadDocumentModal() { document.getElementById('upload-document-modal').classList.remove('hidden'); }
+        function hideUploadDocumentModal() { document.getElementById('upload-document-modal').classList.add('hidden'); }
+
+        // ========================================
+        // Recordings Functions
+        // ========================================
+
+        async function loadRecordings() {
+            recordings = await App.getRecordings(meeting.id);
+            document.getElementById('recordings-count').textContent = recordings.length;
+
+            const container = document.getElementById('recordings-list');
+            if (recordings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state bg-white rounded-xl border border-gray-100 p-12 text-center">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="mx-auto text-gray-300 mb-4">
+                            <path d="M18 10.48V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.48l4 3.98v-11l-4 3.98zM16 18H4V6h12v12zm-7-9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                        </svg>
+                        <p class="text-gray-500">No recordings available</p>
+                        <p class="text-sm text-gray-400 mt-1">Add a recording link or upload a video file</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="grid gap-4">
+                        ${recordings.map(rec => {
+                            const hasUrl = rec.url;
+                            const hasFile = rec.file;
+                            const fileUrl = hasFile ? App.getFileUrl(rec, rec.file) : null;
+                            return `
+                                <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-red-600">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-semibold text-gray-900">${rec.title}</h3>
+                                                <div class="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                                                    <span class="capitalize">${rec.provider || 'Unknown'}</span>
+                                                    ${rec.duration_seconds ? `<span>${App.formatDuration(rec.duration_seconds)}</span>` : ''}
+                                                    ${rec.file_size ? `<span>${App.formatFileSize(rec.file_size)}</span>` : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="badge ${rec.status === 'ready' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${rec.status}</span>
+                                    </div>
+                                    ${rec.description ? `<p class="text-sm text-gray-600 mb-3">${rec.description}</p>` : ''}
+                                    <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
+                                        ${hasUrl ? `
+                                            <a href="${rec.url}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                                    <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                                                </svg>
+                                                Watch
+                                            </a>
+                                        ` : ''}
+                                        ${hasFile ? `
+                                            <a href="${fileUrl}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors">
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                                                </svg>
+                                                Download
+                                            </a>
+                                        ` : ''}
+                                        <button onclick="deleteRecording('${rec.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-auto" title="Delete">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function toggleRecordingFields() {
+            const provider = document.getElementById('recording-provider').value;
+            const urlField = document.getElementById('recording-url-field');
+            const fileField = document.getElementById('recording-file-field');
+
+            if (provider === 'local') {
+                urlField.classList.add('hidden');
+                fileField.classList.remove('hidden');
+            } else {
+                urlField.classList.remove('hidden');
+                fileField.classList.add('hidden');
+            }
+        }
+
+        async function handleAddRecording(e) {
+            e.preventDefault();
+            const provider = document.getElementById('recording-provider').value;
+
+            if (provider === 'local') {
+                const fileInput = document.getElementById('recording-file');
+                if (!fileInput.files.length) {
+                    App.showNotification('Please select a file', 'error');
+                    return;
+                }
+                await App.uploadRecording(fileInput, {
+                    title: document.getElementById('recording-title').value,
+                    meeting: meeting.id,
+                    description: document.getElementById('recording-description').value,
+                    visibility: document.getElementById('recording-visibility').value
+                });
+            } else {
+                await App.createRecording({
+                    meeting: meeting.id,
+                    title: document.getElementById('recording-title').value,
+                    provider: provider,
+                    url: document.getElementById('recording-url').value,
+                    description: document.getElementById('recording-description').value,
+                    visibility: document.getElementById('recording-visibility').value,
+                    recording_date: new Date().toISOString()
+                });
+            }
+
+            hideAddRecordingModal();
+            document.getElementById('add-recording-form').reset();
+            await loadRecordings();
+        }
+
+        async function deleteRecording(recId) {
+            if (!confirm('Are you sure you want to delete this recording?')) return;
+            const result = await App.deleteRecording(recId);
+            if (result) {
+                await loadRecordings();
+            }
+        }
+
+        function showAddRecordingModal() { document.getElementById('add-recording-modal').classList.remove('hidden'); }
+        function hideAddRecordingModal() { document.getElementById('add-recording-modal').classList.add('hidden'); }
+
+        // ========================================
+        // AI Functions
+        // ========================================
+
+        async function checkAIEnabled() {
+            if (!organizationId) return;
+            const integration = await App.getAIIntegration(organizationId);
+            aiEnabled = !!integration;
+
+            // Show/hide AI buttons based on availability
+            const aiSummaryBtn = document.getElementById('ai-summary-btn');
+            if (aiSummaryBtn && aiEnabled) {
+                aiSummaryBtn.style.display = 'inline-flex';
+            }
+        }
+
+        function aiGenerateSummary() {
+            showAIAssistantModal();
+            aiAction('summary');
+        }
+
+        function showAIAssistantModal() {
+            document.getElementById('ai-assistant-modal').classList.remove('hidden');
+            document.getElementById('ai-custom-prompt').classList.add('hidden');
+            document.getElementById('ai-response').classList.add('hidden');
+            document.getElementById('ai-loading').classList.add('hidden');
+        }
+        function hideAIAssistantModal() { document.getElementById('ai-assistant-modal').classList.add('hidden'); }
+
+        async function aiAction(action) {
+            if (!aiEnabled) {
+                App.showNotification('AI is not configured for this organization. Please add an AI integration in organization settings.', 'error');
+                return;
+            }
+
+            document.getElementById('ai-custom-prompt').classList.add('hidden');
+            document.getElementById('ai-response').classList.add('hidden');
+
+            if (action === 'custom') {
+                document.getElementById('ai-custom-prompt').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('ai-loading').classList.remove('hidden');
+
+            try {
+                let response;
+                const meetingContext = {
+                    title: meeting.title,
+                    type: meeting.meeting_type,
+                    status: meeting.status,
+                    participants: participants.length,
+                    description: meeting.description
+                };
+
+                if (action === 'summary') {
+                    response = await App.generateMeetingSummary(organizationId, meetingContext);
+                } else if (action === 'agenda') {
+                    response = await App.generateAgendaSuggestions(organizationId, meeting.meeting_type || 'general');
+                } else if (action === 'motion') {
+                    response = await App.generateMotionDraft(organizationId, 'general motion', meetingContext);
+                }
+
+                if (response) {
+                    document.getElementById('ai-response-content').textContent = response;
+                    document.getElementById('ai-response').classList.remove('hidden');
+                }
+            } catch (error) {
+                App.showNotification('AI request failed: ' + error.message, 'error');
+            } finally {
+                document.getElementById('ai-loading').classList.add('hidden');
+            }
+        }
+
+        async function sendAIPrompt() {
+            const prompt = document.getElementById('ai-prompt-input').value;
+            if (!prompt.trim()) {
+                App.showNotification('Please enter a prompt', 'error');
+                return;
+            }
+
+            document.getElementById('ai-loading').classList.remove('hidden');
+            document.getElementById('ai-custom-prompt').classList.add('hidden');
+
+            try {
+                const meetingContext = {
+                    title: meeting.title,
+                    type: meeting.meeting_type,
+                    status: meeting.status,
+                    participants: participants.length,
+                    description: meeting.description
+                };
+
+                const response = await App.callAI(organizationId, prompt, { meetingContext });
+
+                if (response) {
+                    document.getElementById('ai-response-content').textContent = response;
+                    document.getElementById('ai-response').classList.remove('hidden');
+                }
+            } catch (error) {
+                App.showNotification('AI request failed: ' + error.message, 'error');
+            } finally {
+                document.getElementById('ai-loading').classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

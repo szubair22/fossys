@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - OrgSuite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <script src="/js/layout.js?v=2"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="app-shell">
+    <!-- Shared Header (rendered by Layout.js) -->
+    <header class="app-header"></header>
+
+    <!-- Module Navigation -->
+    <nav class="module-nav"></nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <div class="app-main-inner">
+            <!-- Hidden org selector for test compatibility -->
+            <select id="org-selector" data-testid="org-selector" class="hidden">
+                <option value="">Select organization...</option>
+            </select>
+
+            <!-- Feature Flag Banner -->
+            <div id="feature-disabled-banner" class="hidden mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                <div class="flex items-center gap-3">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-yellow-600">
+                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                    <div>
+                        <p class="font-medium text-yellow-800">Projects Feature Coming Soon</p>
+                        <p class="text-sm text-yellow-600">This feature is not yet enabled for your organization. Contact your administrator.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Header -->
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Projects</h1>
+                    <p class="text-gray-500 mt-1">Track organizational initiatives and milestones</p>
+                </div>
+                <button id="add-project-btn" data-require-role="member"
+                    class="hidden inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    New Project
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-total">0</p>
+                            <p class="text-sm text-gray-500">Total Projects</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-active">0</p>
+                            <p class="text-sm text-gray-500">Active</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-yellow-600">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-planned">0</p>
+                            <p class="text-sm text-gray-500">Planned</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-gray-600">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900" id="stat-completed">0</p>
+                            <p class="text-sm text-gray-500">Completed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-900">All Projects</h2>
+                        <div class="flex items-center gap-2">
+                            <select id="status-filter" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm">
+                                <option value="">All Statuses</option>
+                                <option value="planned">Planned</option>
+                                <option value="active">Active</option>
+                                <option value="on_hold">On Hold</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" data-require-role="admin">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-list" class="divide-y divide-gray-100">
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                    Loading projects...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Project Modal -->
+    <div id="project-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
+            <div class="flex items-center justify-between p-6 border-b border-gray-100">
+                <h3 id="modal-title" class="text-xl font-semibold text-gray-900">New Project</h3>
+                <button onclick="hideProjectModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="project-form" class="p-6 space-y-5">
+                <input type="hidden" id="project-id" value="">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Project Name *</label>
+                    <input type="text" id="project-name" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Enter project name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="project-description" rows="3"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Brief description of the project"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="project-status"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="planned">Planned</option>
+                            <option value="active">Active</option>
+                            <option value="on_hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Committee</label>
+                        <select id="project-committee"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="">No committee</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <input type="date" id="project-start-date"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <input type="date" id="project-end-date"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                    </div>
+                </div>
+                <div class="flex gap-3 justify-end pt-5 border-t border-gray-100">
+                    <button type="button" onclick="hideProjectModal()"
+                        class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Save Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="text-red-600">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Delete Project</h3>
+                    <p class="text-sm text-gray-500">This action cannot be undone.</p>
+                </div>
+            </div>
+            <p class="text-gray-600 mb-6">Are you sure you want to delete <strong id="delete-project-name"></strong>?</p>
+            <div class="flex gap-3 justify-end">
+                <button onclick="hideDeleteModal()"
+                    class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmDelete()"
+                    class="px-5 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2024 OrgSuite. Open-source organization management platform.</p>
+    </footer>
+
+    <script>
+        let currentOrgId = null;
+        let isAdmin = false;
+        let committees = [];
+        let projectToDelete = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+
+            if (!App.requireAuth()) return;
+
+            // Initialize Layout with governance module
+            Layout.init({ module: 'governance' });
+            Layout.renderModuleNav('governance', 'projects');
+
+            // Load organizations for selector
+            await loadOrganizations();
+
+            // Listen for org changes from Layout
+            window.addEventListener('orgchange', async (e) => {
+                document.getElementById('org-selector').value = e.detail.orgId;
+                await onOrgChange();
+            });
+
+            // Org selector change handler
+            document.getElementById('org-selector').addEventListener('change', async () => {
+                await onOrgChange();
+            });
+
+            // Status filter change handler
+            document.getElementById('status-filter').addEventListener('change', loadProjects);
+
+            // Form submit handler
+            document.getElementById('project-form').addEventListener('submit', handleProjectSubmit);
+
+            // Add project button handler
+            document.getElementById('add-project-btn').addEventListener('click', showAddProjectModal);
+        });
+
+        async function loadOrganizations() {
+            const selector = document.getElementById('org-selector');
+            try {
+                const response = await API.organizations.list();
+                const orgs = response.items || response || [];
+
+                if (orgs.length === 0) {
+                    selector.innerHTML = '<option value="">No organizations found</option>';
+                } else {
+                    selector.innerHTML = '<option value="">Select organization...</option>' +
+                        orgs.map(org => `<option value="${org.id}">${UI.escapeHtml(org.name)}</option>`).join('');
+
+                    // Auto-select if only one org or from URL param
+                    const urlOrgId = UI.getUrlParam('org');
+                    if (urlOrgId) {
+                        selector.value = urlOrgId;
+                        await onOrgChange();
+                    } else if (orgs.length === 1) {
+                        selector.value = orgs[0].id;
+                        await onOrgChange();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load organizations:', err);
+                selector.innerHTML = '<option value="">Error loading organizations</option>';
+            }
+        }
+
+        async function onOrgChange() {
+            currentOrgId = document.getElementById('org-selector').value;
+
+            if (!currentOrgId) {
+                // Reset UI
+                document.getElementById('add-project-btn').classList.add('hidden');
+                document.getElementById('projects-list').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            Select an organization to view projects.
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('stat-total').textContent = '0';
+                document.getElementById('stat-active').textContent = '0';
+                document.getElementById('stat-planned').textContent = '0';
+                document.getElementById('stat-completed').textContent = '0';
+                return;
+            }
+
+            // Store current org
+            API.org.setCurrentId(currentOrgId);
+
+            // Check roles
+            isAdmin = await API.roles.hasMinRole('admin', currentOrgId);
+            const canCreate = await API.roles.hasMinRole('member', currentOrgId);
+
+            // Show add button for members
+            if (canCreate) {
+                document.getElementById('add-project-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('add-project-btn').classList.add('hidden');
+            }
+
+            // Load committees for dropdown
+            await loadCommittees();
+
+            // Load projects
+            await loadProjects();
+        }
+
+        async function loadCommittees() {
+            try {
+                const response = await API.governance.committees.list(currentOrgId);
+                committees = response.items || response || [];
+                const select = document.getElementById('project-committee');
+                select.innerHTML = '<option value="">No committee</option>' +
+                    committees.map(c => `<option value="${c.id}">${UI.escapeHtml(c.name)}</option>`).join('');
+            } catch (err) {
+                console.error('Failed to load committees:', err);
+            }
+        }
+
+        async function loadProjects() {
+            const statusFilter = document.getElementById('status-filter').value;
+
+            try {
+                const params = {};
+                if (statusFilter) params.status = statusFilter;
+
+                const response = await API.events.projects.list(currentOrgId, params);
+                const projects = response.items || [];
+
+                // Update stats
+                document.getElementById('stat-total').textContent = response.totalItems || 0;
+                document.getElementById('stat-active').textContent = projects.filter(p => p.status === 'active').length;
+                document.getElementById('stat-planned').textContent = projects.filter(p => p.status === 'planned').length;
+                document.getElementById('stat-completed').textContent = projects.filter(p => p.status === 'completed').length;
+
+                // Render projects
+                const container = document.getElementById('projects-list');
+                if (projects.length === 0) {
+                    container.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                No projects found. Create your first project to get started.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = projects.map(p => renderProjectRow(p)).join('');
+            } catch (err) {
+                console.error('Failed to load projects:', err);
+                document.getElementById('projects-list').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-red-500">
+                            Failed to load projects. Please try again.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderProjectRow(project) {
+            const statusColors = {
+                planned: 'bg-yellow-100 text-yellow-700',
+                active: 'bg-green-100 text-green-700',
+                on_hold: 'bg-orange-100 text-orange-700',
+                completed: 'bg-gray-100 text-gray-700',
+                cancelled: 'bg-red-100 text-red-700'
+            };
+
+            const statusClass = statusColors[project.status] || 'bg-gray-100 text-gray-700';
+            const statusText = (project.status || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            const actionsHtml = isAdmin ? `
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                        <button onclick="editProject('${project.id}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            Edit
+                        </button>
+                        <button onclick="deleteProject('${project.id}', '${UI.escapeHtml(project.name).replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                            Delete
+                        </button>
+                    </div>
+                </td>
+            ` : `<td class="px-6 py-4"></td>`;
+
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div>
+                            <p class="font-medium text-gray-900">${UI.escapeHtml(project.name)}</p>
+                            ${project.description ? `<p class="text-sm text-gray-500 truncate max-w-xs">${UI.escapeHtml(project.description)}</p>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${project.start_date ? UI.formatShortDate(project.start_date) : '-'}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${project.end_date ? UI.formatShortDate(project.end_date) : '-'}
+                    </td>
+                    ${actionsHtml}
+                </tr>
+            `;
+        }
+
+        function showAddProjectModal() {
+            document.getElementById('modal-title').textContent = 'New Project';
+            document.getElementById('project-form').reset();
+            document.getElementById('project-id').value = '';
+            document.getElementById('project-modal').classList.remove('hidden');
+        }
+
+        async function editProject(projectId) {
+            try {
+                const project = await API.events.projects.get(currentOrgId, projectId);
+                document.getElementById('modal-title').textContent = 'Edit Project';
+                document.getElementById('project-id').value = project.id;
+                document.getElementById('project-name').value = project.name;
+                document.getElementById('project-description').value = project.description || '';
+                document.getElementById('project-status').value = project.status || 'planned';
+                document.getElementById('project-committee').value = project.committee_id || '';
+                document.getElementById('project-start-date').value = project.start_date ? project.start_date.split('T')[0] : '';
+                document.getElementById('project-end-date').value = project.end_date ? project.end_date.split('T')[0] : '';
+                document.getElementById('project-modal').classList.remove('hidden');
+            } catch (err) {
+                App.showNotification('Failed to load project', 'error');
+            }
+        }
+
+        function hideProjectModal() {
+            document.getElementById('project-modal').classList.add('hidden');
+        }
+
+        async function handleProjectSubmit(e) {
+            e.preventDefault();
+
+            const projectId = document.getElementById('project-id').value;
+            const payload = {
+                name: document.getElementById('project-name').value,
+                description: document.getElementById('project-description').value,
+                status: document.getElementById('project-status').value,
+                committee_id: document.getElementById('project-committee').value || null,
+                start_date: document.getElementById('project-start-date').value || null,
+                end_date: document.getElementById('project-end-date').value || null
+            };
+
+            try {
+                if (projectId) {
+                    await API.events.projects.update(currentOrgId, projectId, payload);
+                    App.showNotification('Project updated!', 'success');
+                } else {
+                    await API.events.projects.create(currentOrgId, payload);
+                    App.showNotification('Project created!', 'success');
+                }
+                hideProjectModal();
+                await loadProjects();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to save project', 'error');
+            }
+        }
+
+        function deleteProject(projectId, projectName) {
+            projectToDelete = { id: projectId, name: projectName };
+            document.getElementById('delete-project-name').textContent = projectName;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            projectToDelete = null;
+        }
+
+        async function confirmDelete() {
+            if (!projectToDelete) return;
+
+            try {
+                await API.events.projects.delete(currentOrgId, projectToDelete.id);
+                App.showNotification('Project deleted!', 'success');
+                hideDeleteModal();
+                await loadProjects();
+            } catch (err) {
+                App.showNotification(err.message || 'Failed to delete project', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

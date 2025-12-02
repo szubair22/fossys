@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+frontend/build/
+frontend/.svelte-kit/
+
+# Environment files (keep only .example files)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# PocketBase data (keep migrations)
+pocketbase/pb_data/
+
+# Backup directories (debugging artifacts)
+backup_*/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker
+.docker/
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+backend/.venv/
+backend/__pycache__/
+backend/test_uploads/
+
+# Test artifacts
+test-results/
+playwright-report/
+htmlcov/
+.coverage
+
+# Secrets & credentials (never commit)
+*.pem
+*.key
+secrets/
+credentials/
+*.secret
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Large binaries (never commit)
+*.zip
+*.tar.gz
+*.tgz
+
+# Database files (local dev)
+*.db
+*.sqlite
+*.sqlite3

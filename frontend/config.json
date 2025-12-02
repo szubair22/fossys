@@ -1,0 +1,7 @@
+{
+  "APP_ENV": "development",
+  "PB_URL": "/api",
+  "JITSI_DOMAIN": "meet.jit.si",
+  "SITE_URL": "http://localhost:3000",
+  "DEBUG": true
+}

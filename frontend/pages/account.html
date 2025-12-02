@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - OrgMeet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/js/config.js?v=6"></script>
+    <script src="/js/ui.js?v=2"></script>
+    <script src="/js/api.js?v=2"></script>
+    <script src="/js/app.js?v=7"></script>
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-blue-600 font-bold text-xl hover:text-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>OrgMeet</span>
+            </a>
+            <nav class="flex items-center gap-6" id="nav-menu"></nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-10">
+        <div class="max-w-4xl mx-auto px-6">
+            <!-- Page Header -->
+            <div class="mb-10">
+                <h1 class="text-3xl font-bold text-gray-900">My Account</h1>
+                <p class="text-gray-500 mt-2">Manage your profile settings and preferences</p>
+            </div>
+
+            <!-- Account Info Cards -->
+            <div class="space-y-6">
+                <!-- Profile Section -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-blue-600">
+                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Profile Information</h2>
+                        </div>
+                    </div>
+                    <form id="profile-form" class="p-6 space-y-5">
+                        <div class="grid md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Display Name</label>
+                                <input type="text" id="display_name" name="display_name"
+                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="How you want to be called">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+                                <input type="text" id="name" name="name"
+                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="Your full name">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                            <input type="email" id="email" name="email"
+                                class="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
+                                readonly>
+                            <p class="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Timezone</label>
+                                <select id="timezone" name="timezone"
+                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+                                    <option value="">Select timezone...</option>
+                                    <option value="America/New_York">Eastern Time (ET)</option>
+                                    <option value="America/Chicago">Central Time (CT)</option>
+                                    <option value="America/Denver">Mountain Time (MT)</option>
+                                    <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                    <option value="America/Anchorage">Alaska Time (AKT)</option>
+                                    <option value="Pacific/Honolulu">Hawaii Time (HT)</option>
+                                    <option value="Europe/London">London (GMT/BST)</option>
+                                    <option value="Europe/Paris">Central European Time (CET)</option>
+                                    <option value="Europe/Berlin">Berlin (CET)</option>
+                                    <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                    <option value="Asia/Shanghai">China Standard Time (CST)</option>
+                                    <option value="Asia/Kolkata">India Standard Time (IST)</option>
+                                    <option value="Australia/Sydney">Sydney (AEST)</option>
+                                    <option value="UTC">UTC</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Default Organization</label>
+                                <select id="default_org" name="default_org"
+                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+                                    <option value="">None selected</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Account Info (Read-only) -->
+                        <div class="pt-4 border-t border-gray-100">
+                            <h3 class="text-sm font-medium text-gray-700 mb-3">Account Information</h3>
+                            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                                <div class="flex items-center gap-2 text-gray-500">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                                    </svg>
+                                    <span>Member since: <span id="member-since" class="text-gray-700">-</span></span>
+                                </div>
+                                <div class="flex items-center gap-2 text-gray-500">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                                    </svg>
+                                    <span>Account ID: <span id="account-id" class="text-gray-700 font-mono text-xs">-</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z"/>
+                                </svg>
+                                Save Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Notification Preferences -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-purple-600">
+                                    <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Notification Preferences</h2>
+                        </div>
+                    </div>
+                    <form id="notifications-form" class="p-6 space-y-4">
+                        <div class="flex items-center justify-between py-3 border-b border-gray-50">
+                            <div>
+                                <p class="font-medium text-gray-900">Meeting Invitations</p>
+                                <p class="text-sm text-gray-500">Receive emails when you're invited to meetings</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="notify_meeting_invites" name="notify_meeting_invites" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <p class="font-medium text-gray-900">Meeting Reminders</p>
+                                <p class="text-sm text-gray-500">Receive reminder emails before meetings start</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="notify_meeting_reminders" name="notify_meeting_reminders" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-purple-700 transition-all shadow-sm hover:shadow-md">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z"/>
+                                </svg>
+                                Save Preferences
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Change Password Section -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-green-600">
+                                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-gray-900">Change Password</h2>
+                        </div>
+                    </div>
+                    <form id="password-form" class="p-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
+                            <input type="password" id="current_password" name="current_password" required
+                                class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                placeholder="Enter your current password">
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
+                                <input type="password" id="new_password" name="new_password" required minlength="8"
+                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="At least 8 characters">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Confirm New Password</label>
+                                <input type="password" id="confirm_password" name="confirm_password" required minlength="8"
+                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="Repeat new password">
+                            </div>
+                        </div>
+                        <div id="password-error" class="hidden text-red-600 text-sm bg-red-50 px-4 py-3 rounded-xl"></div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-green-700 transition-all shadow-sm hover:shadow-md">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                                </svg>
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="bg-white rounded-2xl shadow-sm border border-red-100">
+                    <div class="px-6 py-5 border-b border-red-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-red-600">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                                </svg>
+                            </div>
+                            <h2 class="font-semibold text-red-700">Danger Zone</h2>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Sign Out of Account</p>
+                                <p class="text-sm text-gray-500">Log out of your current session</p>
+                            </div>
+                            <button onclick="App.logout()" class="inline-flex items-center gap-2 bg-red-50 text-red-600 px-5 py-2.5 rounded-xl font-medium hover:bg-red-100 transition-all border border-red-200">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                                </svg>
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 OrgMeet. Open-source meeting governance platform.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            App.init();
+
+            if (!App.requireAuth()) return;
+
+            App.updateNav();
+
+            // Load current user data
+            const user = App.getUser();
+            if (user) {
+                // Populate profile form
+                document.getElementById('display_name').value = user.display_name || '';
+                document.getElementById('name').value = user.name || '';
+                document.getElementById('email').value = user.email || '';
+                document.getElementById('timezone').value = user.timezone || '';
+
+                // Account info
+                document.getElementById('member-since').textContent = user.created ? App.formatShortDate(user.created) : '-';
+                document.getElementById('account-id').textContent = user.id || '-';
+
+                // Notification preferences (default to true if undefined)
+                document.getElementById('notify_meeting_invites').checked = user.notify_meeting_invites !== false;
+                document.getElementById('notify_meeting_reminders').checked = user.notify_meeting_reminders !== false;
+
+                // Load organizations for default org dropdown
+                const orgs = await App.getOrganizations();
+                const defaultOrgSelect = document.getElementById('default_org');
+                orgs.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org.id;
+                    option.textContent = org.name;
+                    if (user.default_org === org.id) {
+                        option.selected = true;
+                    }
+                    defaultOrgSelect.appendChild(option);
+                });
+            }
+
+            // Profile form submission
+            document.getElementById('profile-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const updates = {
+                    name: document.getElementById('name').value,
+                    display_name: document.getElementById('display_name').value,
+                    timezone: document.getElementById('timezone').value,
+                    default_org: document.getElementById('default_org').value || null
+                };
+
+                const success = await App.updateCurrentUserProfile(updates);
+                if (success) {
+                    App.showNotification('Profile updated successfully!', 'success');
+                }
+            });
+
+            // Notification preferences form submission
+            document.getElementById('notifications-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const updates = {
+                    notify_meeting_invites: document.getElementById('notify_meeting_invites').checked,
+                    notify_meeting_reminders: document.getElementById('notify_meeting_reminders').checked
+                };
+
+                const success = await App.updateCurrentUserProfile(updates);
+                if (success) {
+                    App.showNotification('Notification preferences saved!', 'success');
+                }
+            });
+
+            // Password change form submission
+            document.getElementById('password-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const errorDiv = document.getElementById('password-error');
+                errorDiv.classList.add('hidden');
+
+                const currentPassword = document.getElementById('current_password').value;
+                const newPassword = document.getElementById('new_password').value;
+                const confirmPassword = document.getElementById('confirm_password').value;
+
+                // Validate passwords match
+                if (newPassword !== confirmPassword) {
+                    errorDiv.textContent = 'New passwords do not match';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                // Validate password length
+                if (newPassword.length < 8) {
+                    errorDiv.textContent = 'Password must be at least 8 characters';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                const success = await App.changePassword(currentPassword, newPassword, confirmPassword);
+                if (success) {
+                    // Clear form
+                    document.getElementById('current_password').value = '';
+                    document.getElementById('new_password').value = '';
+                    document.getElementById('confirm_password').value = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
