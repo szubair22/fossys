@@ -255,6 +255,22 @@ const Layout = {
     // ========================================
 
     /**
+     * Check if a module is enabled based on OrgSuiteModules config
+     */
+    isModuleEnabled(moduleId) {
+        // If OrgSuiteModules is not defined, all modules are enabled
+        if (!window.OrgSuiteModules) return true;
+        return window.OrgSuiteModules[moduleId] === true;
+    },
+
+    /**
+     * Get list of enabled modules
+     */
+    getEnabledModules() {
+        return Object.values(this.modules).filter(m => this.isModuleEnabled(m.id));
+    },
+
+    /**
      * Render the Applications overlay
      */
     renderAppsOverlay() {
@@ -269,7 +285,10 @@ const Layout = {
             if (e.target === overlay) this.closeAppsMenu();
         };
 
-        const modulesList = Object.values(this.modules).map(m => `
+        // Filter modules based on OrgSuiteModules config
+        const enabledModules = this.getEnabledModules();
+
+        const modulesList = enabledModules.map(m => `
             <div class="apps-module-item${m.id === this.currentModule ? ' active' : ''}"
                  data-module="${m.id}"
                  onclick="Layout.selectModule('${m.id}')">
