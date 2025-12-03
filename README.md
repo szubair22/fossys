@@ -1,6 +1,6 @@
-# Fossys - Open Source Apps for Small Organizations
+# Fossys - Open Source Apps for Organizations
 
-This monorepo contains open-source applications for nonprofits, fraternities/sororities, and service-based companies.
+This monorepo contains open-source applications
 
 ## Applications
 
