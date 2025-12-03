@@ -256,11 +256,18 @@ const Layout = {
 
     /**
      * Check if a module is enabled based on OrgSuiteModules config
+     * Returns true if:
+     * - OrgSuiteModules is not defined (backward compatible)
+     * - The module key doesn't exist (backward compatible)
+     * - The module flag is not explicitly false
      */
     isModuleEnabled(moduleId) {
         // If OrgSuiteModules is not defined, all modules are enabled
         if (!window.OrgSuiteModules) return true;
-        return window.OrgSuiteModules[moduleId] === true;
+        // If key doesn't exist, treat as enabled (backward compatible)
+        if (!(moduleId in window.OrgSuiteModules)) return true;
+        // Only hide if explicitly set to false
+        return window.OrgSuiteModules[moduleId] !== false;
     },
 
     /**
