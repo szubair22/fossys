@@ -576,5 +576,29 @@
             }
         }
     </script>
+
+    <!-- Module gating for Stage 1 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                if (!window.OrgSuiteModules || window.OrgSuiteModules.finance === false) {
+                    const main = document.querySelector('main') || document.body;
+                    main.innerHTML = `
+                        <div class="min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
+                            <h1 class="text-2xl font-bold mb-3">Module not available in Stage 1</h1>
+                            <p class="text-gray-600 mb-6 max-w-xl">
+                                This page belongs to the Finance module which isn't enabled in the current OrgSuite deployment.
+                            </p>
+                            <a href="/" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-gray-300 text-gray-800 hover:bg-gray-100">
+                                Return to dashboard
+                            </a>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('Module gating error:', e);
+            }
+        });
+    </script>
 </body>
 </html>
